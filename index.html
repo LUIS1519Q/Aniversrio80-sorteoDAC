@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Campeonato Aniversario 80 DGAC</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="shield">DAC</div> CAMPEONATO ANIVERSARIO 80 DGAC</div>
+  <div style="font-size:11px;">28 jul – 9 ago 2026</div>
+</div>
+
+<nav>
+  <button class="active" onclick="ir(0,this)">1. Inicio</button>
+  <button onclick="ir(1,this)">2. Sorteo</button>
+  <button onclick="ir(2,this)">3. Grupos</button>
+  <button onclick="ir(3,this)">4. Tabla posiciones</button>
+  <button onclick="ir(4,this)">5. Eliminación directa</button>
+  <button onclick="ir(5,this)">6. Mundial de 40</button>
+</nav>
+
+<main>
+
+  <!-- 0. INICIO -->
+  <section class="screen active" id="s0">
+    <h1>Seleccionar disciplina</h1>
+    <div class="disc-grid">
+      <div class="disc-card" onclick="seleccionarDisciplina('hombres')"><b>⚽ Fútbol Hombres</b><span>8 equipos · 3 grupos</span></div>
+      <div class="disc-card" onclick="seleccionarDisciplina('mujeres')"><b>⚽ Fútbol Mujeres</b><span>3 equipos · 1 grupo</span></div>
+      <div class="disc-card" onclick="seleccionarDisciplina('basquet')"><b>🏀 Básquet Mixto</b><span>8 equipos · 3 grupos</span></div>
+      <div class="disc-card" onclick="seleccionarDisciplina('voley')"><b>🏐 Ecuavoley</b><span>8 equipos · 3 grupos</span></div>
+      <div class="disc-card" onclick="ir(5)"><b>🃏 Mundial de 40</b><span>Parejas · inscripción abierta</span></div>
+    </div>
+    <p class="add-note">Cada disciplina se configura por separado. El número de equipos y grupos es ajustable, no fijo.</p>
+  </section>
+
+  <!-- 1. SORTEO -->
+  <section class="screen" id="s1">
+    <h1 id="titulo-sorteo">Sorteo de equipos — Fútbol Hombres</h1>
+    <div class="card">
+      <label style="font-size:13px;">Nombre del equipo</label><br>
+      <div class="btn-row">
+        <input type="text" id="nuevo-equipo" placeholder="Ej: Torre de Control" style="flex:1;padding:8px;border:1px solid var(--linea);">
+        <button class="btn" onclick="agregarEquipo()">Agregar equipo</button>
+      </div>
+      <p class="add-note">Se pueden seguir agregando equipos aunque el sorteo ya haya iniciado — se ubican en el grupo con menos integrantes.</p>
+    </div>
+
+    <div class="sorteo-layout">
+      <div class="lista-pendientes card">
+        <b>Equipos por sortear</b>
+        <ul id="lista-equipos" class="pendientes-ul">
+          <li data-nombre="Torre de Control">Torre de Control</li>
+          <li data-nombre="Pista Norte">Pista Norte</li>
+          <li data-nombre="Radar 1">Radar 1</li>
+          <li data-nombre="Escuadrón Sur">Escuadrón Sur</li>
+          <li data-nombre="Los Pilotos">Los Pilotos</li>
+          <li data-nombre="Aeroclub">Aeroclub</li>
+          <li data-nombre="Turbina FC">Turbina FC</li>
+          <li data-nombre="Vuelo 502">Vuelo 502</li>
+        </ul>
+        <div class="btn-row">
+          <button class="btn oro" onclick="sortearUno()">🎲 Sortear siguiente</button>
+        </div>
+      </div>
+
+      <div class="grupos-sorteo">
+        <div class="grupo-box">
+          <h3>GRUPO 1</h3>
+          <ul id="g1" class="grupo-ul"></ul>
+        </div>
+        <div class="grupo-box">
+          <h3>GRUPO 2</h3>
+          <ul id="g2" class="grupo-ul"></ul>
+        </div>
+        <div class="grupo-box">
+          <h3>GRUPO 3</h3>
+          <ul id="g3" class="grupo-ul"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row"><button class="btn oro" onclick="ir(2)">Ver grupos completos →</button></div>
+  </section>
+
+  <!-- 2. GRUPOS -->
+  <section class="screen" id="s2">
+    <h1>Grupos generados — Fútbol Hombres</h1>
+    <div class="grupos">
+      <div class="grupo-box">
+        <h3>GRUPO 1</h3>
+        <ul><li><b>1</b> Torre de Control</li><li><b>2</b> Radar 1</li><li><b>3</b> Aeroclub</li></ul>
+      </div>
+      <div class="grupo-box">
+        <h3>GRUPO 2</h3>
+        <ul><li><b>1</b> Pista Norte</li><li><b>2</b> Los Pilotos</li><li><b>3</b> Turbina FC</li></ul>
+      </div>
+      <div class="grupo-box">
+        <h3>GRUPO 3</h3>
+        <ul><li><b>1</b> Escuadrón Sur</li><li><b>2</b> Vuelo 502</li><li><b>3</b> + agregar</li></ul>
+      </div>
+    </div>
+    <p class="add-note">El sistema arma automáticamente todos los cruces posibles dentro de cada grupo (todos contra todos): 1vs2, 1vs3, 2vs3.</p>
+    <div class="btn-row"><button class="btn oro" onclick="ir(3)">Ver partidos y tabla →</button></div>
+  </section>
+
+  <!-- 3. TABLA -->
+  <section class="screen" id="s3">
+    <h1>Partidos y tabla de posiciones — Grupo 1</h1>
+    <div class="card">
+      <b>Partidos del grupo</b>
+      <table style="margin-top:8px;">
+        <tr><td>Torre de Control</td><td><input style="width:30px" value="2"></td><td>vs</td><td><input style="width:30px" value="1"></td><td>Radar 1</td><td><span class="pill">Finalizado</span></td></tr>
+        <tr><td>Torre de Control</td><td><input style="width:30px" placeholder="-"></td><td>vs</td><td><input style="width:30px" placeholder="-"></td><td>Aeroclub</td><td><span class="pill" style="background:var(--linea);color:#555">Pendiente</span></td></tr>
+        <tr><td>Radar 1</td><td><input style="width:30px" placeholder="-"></td><td>vs</td><td><input style="width:30px" placeholder="-"></td><td>Aeroclub</td><td><span class="pill" style="background:var(--linea);color:#555">Pendiente</span></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <b>Tabla de posiciones (auto-calculada)</b>
+      <table>
+        <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>
+        <tr class="top3"><td>1</td><td>Torre de Control</td><td>1</td><td>1</td><td>0</td><td>0</td><td>+1</td><td>3</td></tr>
+        <tr><td>2</td><td>Aeroclub</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>3</td><td>Radar 1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>-1</td><td>0</td></tr>
+      </table>
+    </div>
+    <div class="btn-row"><button class="btn oro" onclick="ir(4)">Ir a eliminación directa →</button></div>
+  </section>
+
+  <!-- 4. ELIMINACION -->
+  <section class="screen" id="s4">
+    <h1>Eliminación directa — Fútbol Hombres</h1>
+    <p class="add-note">Se cruzan los mejores puntajes de cada grupo, tipo mundial: 1°G1 vs 2°G2, 1°G2 vs 2°G3, etc.</p>
+    <div class="bracket">
+      <div class="ronda">
+        <div class="ronda-label">Semifinal</div>
+        <div class="match"><div class="win">Torre de Control</div><div>Los Pilotos</div></div>
+        <div class="match"><div>Escuadrón Sur</div><div class="win">Pista Norte</div></div>
+      </div>
+      <div class="ronda">
+        <div class="ronda-label">Final</div>
+        <div class="match"><div class="win">Torre de Control</div><div>Pista Norte</div></div>
+      </div>
+      <div class="ronda">
+        <div class="ronda-label">Campeón</div>
+        <div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 Torre de Control</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. MUNDIAL 40 -->
+  <section class="screen" id="s5">
+    <h1>Mundial de 40 — Bracket eliminación directa</h1>
+    <div class="card">
+      <b>Inscripción de parejas (abierta, sin límite fijo)</b>
+      <div class="btn-row">
+        <input placeholder="Jugador 1" style="padding:8px;border:1px solid var(--linea);">
+        <input placeholder="Jugador 2" style="padding:8px;border:1px solid var(--linea);">
+        <button class="btn">Inscribir pareja</button>
+      </div>
+      <p class="add-note">No hay fase de grupos: cada pareja inscrita entra directo al bracket. Con número impar se asigna 1 bye automático.</p>
+    </div>
+    <div class="bracket">
+      <div class="ronda">
+        <div class="ronda-label">1/16</div>
+        <div class="match"><div class="win">Pareja 1</div><div>Pareja 2</div></div>
+        <div class="match"><div>Pareja 3</div><div class="win">Pareja 4</div></div>
+        <div class="match"><div class="win">Pareja 5</div><div>Pareja 6</div></div>
+        <div class="match"><div>Pareja 7</div><div class="win">Pareja 8</div></div>
+        <div class="match"><div class="win">Pareja 9 (bye)</div><div>—</div></div>
+      </div>
+      <div class="ronda">
+        <div class="ronda-label">Cuartos</div>
+        <div class="match"><div class="win">Pareja 1</div><div>Pareja 4</div></div>
+        <div class="match"><div>Pareja 6</div><div class="win">Pareja 8</div></div>
+        <div class="match"><div class="win">Pareja 9</div><div>—</div></div>
+      </div>
+      <div class="ronda">
+        <div class="ronda-label">Semifinal</div>
+        <div class="match"><div class="win">Pareja 1</div><div>Pareja 8</div></div>
+      </div>
+      <div class="ronda">
+        <div class="ronda-label">Campeón</div>
+        <div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 Pareja 1</div></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
