@@ -310,25 +310,35 @@ const STORAGE_KEY = 'dgac_estado_disciplinas';
 
 function guardarEstado(){
   const paquete = { disciplinas: disciplinas, mundial40: mundial40 };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(paquete));
+  window.firebaseSet(window.firebaseRef(window.firebaseDB, 'estado'), paquete)
+    .catch(error => {
+      console.error('Error al guardar en Firebase:', error);
+    });
 }
 
-function cargarEstado(){
-  const guardado = localStorage.getItem(STORAGE_KEY);
-  if(!guardado) return;
+async function cargarEstado(){
+  try {
+    const snapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'estado'));
 
-  const datosGuardados = JSON.parse(guardado);
+    if(!snapshot.exists()){
+      return;
+    }
 
-  if(datosGuardados.disciplinas){
-    Object.keys(datosGuardados.disciplinas).forEach(clave => {
-      if(disciplinas[clave]){
-        disciplinas[clave] = datosGuardados.disciplinas[clave];
-      }
-    });
-  }
+    const datosGuardados = snapshot.val();
 
-  if(datosGuardados.mundial40){
-    mundial40 = datosGuardados.mundial40;
+    if(datosGuardados.disciplinas){
+      Object.keys(datosGuardados.disciplinas).forEach(clave => {
+        if(disciplinas[clave]){
+          disciplinas[clave] = datosGuardados.disciplinas[clave];
+        }
+      });
+    }
+
+    if(datosGuardados.mundial40){
+      mundial40 = datosGuardados.mundial40;
+    }
+  } catch (error) {
+    console.error('Error al cargar desde Firebase:', error);
   }
 }
 
@@ -893,6 +903,10 @@ function irAtras(actual){
   ir(pantallaAnterior[actual]);
 }
 
-cargarEstado();
-seleccionarDisciplina('hombres', false);
-ir(0);
+async function iniciarApp(){
+  await cargarEstado();
+  seleccionarDisciplina('hombres', false);
+  ir(0);
+}
+
+iniciarApp();
