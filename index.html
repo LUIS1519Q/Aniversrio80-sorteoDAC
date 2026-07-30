@@ -149,41 +149,30 @@
     <div class="card">
       <b>Inscripción de parejas (abierta, sin límite fijo)</b>
       <div class="btn-row">
-        <input placeholder="Jugador 1" style="padding:8px;border:1px solid var(--linea);">
-        <input placeholder="Jugador 2" style="padding:8px;border:1px solid var(--linea);">
-        <button class="btn">Inscribir pareja</button>
+        <input type="text" id="mundial-jugador1" placeholder="Jugador 1" style="padding:8px;border:1px solid var(--linea);">
+        <input type="text" id="mundial-jugador2" placeholder="Jugador 2" style="padding:8px;border:1px solid var(--linea);">
+        <button class="btn" onclick="inscribirPareja()">Inscribir pareja</button>
       </div>
-      <p class="add-note">No hay fase de grupos: cada pareja inscrita entra directo al bracket. Con número impar se asigna 1 bye automático.</p>
+      <p class="add-note">No hay fase de grupos: cada pareja inscrita entra directo al bracket. Con número impar se asigna 1 bye al azar. Se puede seguir inscribiendo aunque el bracket ya esté generado — se regenera automáticamente.</p>
     </div>
-    <div class="bracket">
-      <div class="ronda">
-        <div class="ronda-label">1/16</div>
-        <div class="match"><div class="win">Pareja 1</div><div>Pareja 2</div></div>
-        <div class="match"><div>Pareja 3</div><div class="win">Pareja 4</div></div>
-        <div class="match"><div class="win">Pareja 5</div><div>Pareja 6</div></div>
-        <div class="match"><div>Pareja 7</div><div class="win">Pareja 8</div></div>
-        <div class="match"><div class="win">Pareja 9 (bye)</div><div>—</div></div>
-      </div>
-      <div class="ronda">
-        <div class="ronda-label">Cuartos</div>
-        <div class="match"><div class="win">Pareja 1</div><div>Pareja 4</div></div>
-        <div class="match"><div>Pareja 6</div><div class="win">Pareja 8</div></div>
-        <div class="match"><div class="win">Pareja 9</div><div>—</div></div>
-      </div>
-      <div class="ronda">
-        <div class="ronda-label">Semifinal</div>
-        <div class="match"><div class="win">Pareja 1</div><div>Pareja 8</div></div>
-      </div>
-      <div class="ronda">
-        <div class="ronda-label">Campeón</div>
-        <div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 Pareja 1</div></div>
-      </div>
-    </div>
-    <div class="btn-row">
-  <button class="btn" onclick="irAtras(5)">← Atrás</button>
-</div>
-  </section>
 
+    <div class="card">
+      <b>Parejas inscritas</b>
+      <div id="lista-parejas-mundial" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn oro" onclick="generarBracketMundial(); renderizarBracketMundial();">🎲 Generar / actualizar bracket</button>
+    </div>
+
+    <div class="bracket" id="bracket-mundial40" style="margin-top:16px;">
+      <!-- El bracket se genera dinámicamente con JS -->
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="irAtras(5)">← Atrás</button>
+    </div>
+  </section>
 </main>
 
 <script src="script.js"></script>
