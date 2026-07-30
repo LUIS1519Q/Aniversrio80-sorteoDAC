@@ -22,23 +22,314 @@ const disciplinas = {
   }
 };
 
+let mundial40 = {
+  parejas: [],   // cada una: {id, jugador1, jugador2}
+  bracket: null
+};
+
+function nombrePareja(pareja){
+  return pareja.jugador1 + ' / ' + pareja.jugador2;
+}
+
+function inscribirPareja(){
+  const input1 = document.getElementById('mundial-jugador1');
+  const input2 = document.getElementById('mundial-jugador2');
+  const j1 = input1.value.trim();
+  const j2 = input2.value.trim();
+
+  if(!j1 || !j2){
+    alert('Debes ingresar el nombre de ambos jugadores.');
+    return;
+  }
+
+  const nueva = { id: Date.now(), jugador1: j1, jugador2: j2 };
+  mundial40.parejas.push(nueva);
+
+  if(mundial40.bracket){
+    generarBracketMundial();
+  }
+
+  guardarEstado();
+  renderizarListaParejas();
+  if(mundial40.bracket) renderizarBracketMundial();
+
+  input1.value = '';
+  input2.value = '';
+}
+
+function parejaYaJugo(nombrePar){
+  if(!mundial40.bracket) return false;
+  const ronda1 = mundial40.bracket[0];
+  const partido = ronda1.find(p => p.local === nombrePar || p.visitante === nombrePar);
+  return partido ? !!partido.ganador : false;
+}
+
+function editarPareja(id){
+  const pareja = mundial40.parejas.find(p => p.id === id);
+  if(!pareja) return;
+
+  if(parejaYaJugo(nombrePareja(pareja))){
+    alert('Esta pareja ya jugó su primer partido, no se puede editar.');
+    return;
+  }
+
+  const nuevoJ1 = prompt('Jugador 1:', pareja.jugador1);
+  if(!nuevoJ1 || !nuevoJ1.trim()) return;
+  const nuevoJ2 = prompt('Jugador 2:', pareja.jugador2);
+  if(!nuevoJ2 || !nuevoJ2.trim()) return;
+
+  pareja.jugador1 = nuevoJ1.trim();
+  pareja.jugador2 = nuevoJ2.trim();
+
+  if(mundial40.bracket) generarBracketMundial();
+  guardarEstado();
+  renderizarListaParejas();
+  if(mundial40.bracket) renderizarBracketMundial();
+}
+
+function eliminarPareja(id){
+  const pareja = mundial40.parejas.find(p => p.id === id);
+  if(!pareja) return;
+
+  if(parejaYaJugo(nombrePareja(pareja))){
+    alert('Esta pareja ya jugó su primer partido, no se puede eliminar.');
+    return;
+  }
+
+  if(!confirm('¿Eliminar la pareja "' + nombrePareja(pareja) + '"?')) return;
+
+  mundial40.parejas = mundial40.parejas.filter(p => p.id !== id);
+
+  if(mundial40.bracket) generarBracketMundial();
+  guardarEstado();
+  renderizarListaParejas();
+  if(mundial40.bracket) renderizarBracketMundial();
+}
+
+function mezclarAlAzar(array){
+  const copia = [...array];
+  for(let i = copia.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+function generarBracketMundial(){
+  if(mundial40.parejas.length < 2){
+    mundial40.bracket = null;
+    return;
+  }
+
+  const bracketPrevio = mundial40.bracket;
+
+  const nombres = mundial40.parejas.map(nombrePareja);
+  const mezcladas = mezclarAlAzar(nombres);
+
+  const tamanoBracket = siguientePotenciaDeDos(mezcladas.length);
+  const orden = ordenSiembra(tamanoBracket);
+
+  const porSiembra = {};
+  mezcladas.forEach((nombre, idx) => { porSiembra[idx + 1] = nombre; });
+
+  const slots = orden.map(siembra => porSiembra[siembra] || 'BYE');
+
+  const ronda1 = [];
+  for(let i = 0; i < slots.length; i += 2){
+    const local = slots[i];
+    const visitante = slots[i + 1];
+    let ganador = null;
+    if(local === 'BYE') ganador = visitante;
+    else if(visitante === 'BYE') ganador = local;
+
+    if(bracketPrevio && bracketPrevio[0]){
+      const previo = bracketPrevio[0].find(p =>
+        (p.local === local && p.visitante === visitante) ||
+        (p.local === visitante && p.visitante === local)
+      );
+      if(previo && previo.ganador) ganador = previo.ganador;
+    }
+
+    ronda1.push({ local, visitante, ganador });
+  }
+
+  const rondas = [ronda1];
+  while(rondas[rondas.length - 1].length > 1){
+    const anterior = rondas[rondas.length - 1];
+    const siguiente = [];
+    for(let i = 0; i < anterior.length; i += 2){
+      siguiente.push({
+        local: anterior[i].ganador || 'Por definir',
+        visitante: anterior[i + 1].ganador || 'Por definir',
+        ganador: null
+      });
+    }
+    rondas.push(siguiente);
+  }
+
+  mundial40.bracket = rondas;
+  guardarEstado();
+}
+
+function renderizarListaParejas(){
+  const cont = document.getElementById('lista-parejas-mundial');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  if(mundial40.parejas.length === 0){
+    cont.innerHTML = '<p class="add-note">Aún no hay parejas inscritas.</p>';
+    return;
+  }
+
+  mundial40.parejas.forEach(pareja => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--linea);';
+
+    const span = document.createElement('span');
+    span.textContent = nombrePareja(pareja);
+    div.appendChild(span);
+
+    if(!parejaYaJugo(nombrePareja(pareja))){
+      const btnEditar = document.createElement('button');
+      btnEditar.textContent = '✏️';
+      btnEditar.onclick = () => editarPareja(pareja.id);
+      div.appendChild(btnEditar);
+
+      const btnEliminar = document.createElement('button');
+      btnEliminar.textContent = '🗑️';
+      btnEliminar.onclick = () => eliminarPareja(pareja.id);
+      div.appendChild(btnEliminar);
+    }
+
+    cont.appendChild(div);
+  });
+}
+
+function seleccionarGanadorMundial(numRonda, numPartido, ganador){
+  mundial40.bracket[numRonda][numPartido].ganador = ganador;
+  propagarDesdeMundial(numRonda);
+  guardarEstado();
+  renderizarBracketMundial();
+}
+
+function deshacerGanadorMundial(numRonda, numPartido){
+  const partido = mundial40.bracket[numRonda][numPartido];
+  if(!confirm('¿Deshacer el resultado de "' + partido.local + ' vs ' + partido.visitante + '"?')) return;
+  partido.ganador = null;
+  propagarDesdeMundial(numRonda);
+  guardarEstado();
+  renderizarBracketMundial();
+}
+
+function propagarDesdeMundial(numRonda){
+  for(let r = numRonda + 1; r < mundial40.bracket.length; r++){
+    const anterior = mundial40.bracket[r - 1];
+    const actual = mundial40.bracket[r];
+    for(let i = 0; i < actual.length; i++){
+      actual[i].local = anterior[i * 2].ganador || 'Por definir';
+      actual[i].visitante = anterior[i * 2 + 1].ganador || 'Por definir';
+      actual[i].ganador = null;
+    }
+  }
+}
+
+const nombresRondaMundial = {
+  2: ['Final','Campeón'], 4: ['Semifinal','Final','Campeón'],
+  8: ['Cuartos de final','Semifinal','Final','Campeón'],
+  16: ['Octavos de final','Cuartos de final','Semifinal','Final','Campeón'],
+  32: ['1/16','Octavos de final','Cuartos de final','Semifinal','Final','Campeón']
+};
+
+function renderizarBracketMundial(){
+  const cont = document.getElementById('bracket-mundial40');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  if(!mundial40.bracket){
+    cont.innerHTML = '<p class="add-note">Inscribe al menos 2 parejas para generar el bracket.</p>';
+    return;
+  }
+
+  const tamanoInicial = mundial40.bracket[0].length * 2;
+  const etiquetas = nombresRondaMundial[tamanoInicial] || mundial40.bracket.map((_, i) => 'Ronda ' + (i+1));
+
+  mundial40.bracket.forEach((ronda, numRonda) => {
+    const rondaDiv = document.createElement('div');
+    rondaDiv.className = 'ronda';
+    const label = document.createElement('div');
+    label.className = 'ronda-label';
+    label.textContent = etiquetas[numRonda] || ('Ronda ' + (numRonda+1));
+    rondaDiv.appendChild(label);
+
+    ronda.forEach((partido, numPartido) => {
+      const matchDiv = document.createElement('div');
+      matchDiv.className = 'match';
+      const esFinal = ronda.length === 1 && partido.ganador;
+      const esBye = partido.local === 'BYE' || partido.visitante === 'BYE';
+
+      ['local','visitante'].forEach(lado => {
+        const nombre = partido[lado];
+        const div = document.createElement('div');
+        const esGanador = partido.ganador && partido.ganador === nombre;
+        div.className = esGanador ? 'win' : '';
+        div.textContent = nombre;
+
+        const jugable = nombre && nombre !== 'BYE' && nombre !== 'Por definir' &&
+                         partido.local !== 'Por definir' && partido.visitante !== 'Por definir' &&
+                         partido.local !== 'BYE' && partido.visitante !== 'BYE';
+
+        if(jugable && !partido.ganador){
+          div.style.cursor = 'pointer';
+          div.onclick = () => seleccionarGanadorMundial(numRonda, numPartido, nombre);
+        } else if(partido.ganador && !esBye){
+          div.style.cursor = 'pointer';
+          div.onclick = () => deshacerGanadorMundial(numRonda, numPartido);
+        }
+        matchDiv.appendChild(div);
+      });
+
+      rondaDiv.appendChild(matchDiv);
+
+      if(esFinal){
+        const campeonDiv = document.createElement('div');
+        campeonDiv.className = 'ronda';
+        campeonDiv.innerHTML = '<div class="ronda-label">Campeón</div><div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 ' + partido.ganador + '</div></div>';
+        cont.appendChild(rondaDiv);
+        cont.appendChild(campeonDiv);
+        return;
+      }
+    });
+
+    if(!(ronda.length === 1 && ronda[0].ganador)){
+      cont.appendChild(rondaDiv);
+    }
+  });
+}
+
 const STORAGE_KEY = 'dgac_estado_disciplinas';
 
 function guardarEstado(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(disciplinas));
+  const paquete = { disciplinas: disciplinas, mundial40: mundial40 };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(paquete));
 }
 
 function cargarEstado(){
   const guardado = localStorage.getItem(STORAGE_KEY);
-  if(!guardado) return; // primera vez que se abre, no hay nada guardado todavía
+  if(!guardado) return;
 
   const datosGuardados = JSON.parse(guardado);
-  // Solo sobreescribimos las disciplinas que ya conocemos (hombres, mujeres, etc.)
-  Object.keys(datosGuardados).forEach(clave => {
-    if(disciplinas[clave]){
-      disciplinas[clave] = datosGuardados[clave];
-    }
-  });
+
+  if(datosGuardados.disciplinas){
+    Object.keys(datosGuardados.disciplinas).forEach(clave => {
+      if(disciplinas[clave]){
+        disciplinas[clave] = datosGuardados.disciplinas[clave];
+      }
+    });
+  }
+
+  if(datosGuardados.mundial40){
+    mundial40 = datosGuardados.mundial40;
+  }
 }
 
 let disciplinaActual = 'hombres';
@@ -49,19 +340,16 @@ function seleccionarDisciplina(clave, navegar){
   const d = disciplinas[clave];
   document.getElementById('titulo-sorteo').textContent = 'Sorteo de equipos — ' + d.titulo;
 
-  // Si esta disciplina aún no tiene grupos creados (primera vez), los inicializamos vacíos
   if(!d.grupos){
     d.grupos = [];
     for(let i=0; i<d.numGrupos; i++){ d.grupos.push([]); }
   }
 
-  // Armamos un mapa: qué equipos ya están sorteados y en qué grupo
   const asignados = {};
   d.grupos.forEach((grupoArray, idx) => {
     grupoArray.forEach(nombre => { asignados[nombre] = idx + 1; });
   });
 
-  // Reconstruir lista de pendientes/sorteados respetando el estado real
   const listaUl = document.getElementById('lista-equipos');
   listaUl.innerHTML = '';
   d.equipos.forEach(nombre => {
@@ -79,7 +367,6 @@ function seleccionarDisciplina(clave, navegar){
       etiqueta.textContent = 'Grupo ' + asignados[nombre];
       li.appendChild(etiqueta);
     } else {
-      // Solo los equipos SIN sortear se pueden editar o eliminar
       const btnEditar = document.createElement('button');
       btnEditar.textContent = '✏️';
       btnEditar.title = 'Renombrar';
@@ -96,7 +383,6 @@ function seleccionarDisciplina(clave, navegar){
     listaUl.appendChild(li);
   });
 
-  // Reconstruir cajas de grupos
   const cont = document.querySelector('.grupos-sorteo');
   cont.innerHTML = '';
   cont.style.gridTemplateColumns = 'repeat(' + d.numGrupos + ', 1fr)';
@@ -107,7 +393,6 @@ function seleccionarDisciplina(clave, navegar){
     cont.appendChild(box);
   }
 
-  // Rellenar cada grupo con los equipos que YA estaban guardados en d.grupos
   d.grupos.forEach((grupoArray, idx) => {
     const grupoUl = document.getElementById('g' + (idx + 1));
     grupoArray.forEach((nombre, pos) => {
@@ -120,12 +405,9 @@ function seleccionarDisciplina(clave, navegar){
   if(navegar) ir(1);
 }
 
-// --- Sorteo verdaderamente aleatorio, sin patrón fijo ---
 function sortearUno(){
   const d = disciplinas[disciplinaActual];
 
-  // Determinamos los pendientes comparando contra los DATOS (d.grupos), no contra el HTML.
-  // Esto evita que un equipo aparezca "pendiente" en la pantalla pero ya esté sorteado en los datos, o viceversa.
   const yaAsignados = new Set(d.grupos.flat());
   const pendientes = d.equipos.filter(nombre => !yaAsignados.has(nombre));
 
@@ -134,26 +416,20 @@ function sortearUno(){
     return;
   }
 
-  // Elegimos un equipo al azar entre los pendientes
   const nombre = pendientes[Math.floor(Math.random() * pendientes.length)];
 
-  // Buscamos el tamaño más chico entre TODOS los grupos ahora mismo
   const minTamano = Math.min(...d.grupos.map(g => g.length));
 
-  // Solo los grupos que tienen ese tamaño mínimo son candidatos a recibir el próximo equipo
   const candidatos = [];
   d.grupos.forEach((grupoArray, idx) => {
     if(grupoArray.length === minTamano) candidatos.push(idx);
   });
 
-  // Sorteamos SOLO entre esos grupos "más vacíos"
   const grupoIdxCero = candidatos[Math.floor(Math.random() * candidatos.length)];
   d.grupos[grupoIdxCero].push(nombre);
 
   guardarEstado();
 
-  // Redibujamos TODO desde los datos (esto automáticamente quita los botones editar/eliminar
-  // del equipo recién sorteado, porque el render solo los pone en equipos SIN asignar).
   seleccionarDisciplina(disciplinaActual, false);
 }
 
@@ -183,7 +459,7 @@ function renderizarGrupos(){
     cont.appendChild(box);
   });
 }
-// Genera todos los cruces posibles dentro de un array de equipos (todos contra todos)
+
 function generarCombinaciones(equipos){
   const partidos = [];
   for(let i = 0; i < equipos.length; i++){
@@ -191,7 +467,7 @@ function generarCombinaciones(equipos){
       partidos.push({
         local: equipos[i],
         visitante: equipos[j],
-        golesLocal: null,   // null = todavía no se ha jugado
+        golesLocal: null,
         golesVisitante: null
       });
     }
@@ -199,8 +475,6 @@ function generarCombinaciones(equipos){
   return partidos;
 }
 
-// Genera (o regenera) los partidos de TODOS los grupos de la disciplina actual,
-// respetando los resultados que YA se hayan cargado si el partido sigue existiendo.
 function generarPartidos(){
   const d = disciplinas[disciplinaActual];
 
@@ -224,18 +498,14 @@ function generarPartidos(){
   guardarEstado();
 }
 
-// Calcula la tabla de posiciones de UN grupo específico, a partir de sus partidos.
-// Recibe el array de equipos del grupo y el array de partidos de ese mismo grupo.
 function calcularTabla(equiposDelGrupo, partidosDelGrupo){
-  // Inicializamos cada equipo en cero
   const stats = {};
   equiposDelGrupo.forEach(nombre => {
     stats[nombre] = { equipo: nombre, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, dif:0, pts:0 };
   });
 
-  // Recorremos los partidos YA jugados (los que tienen goles cargados, no null)
   partidosDelGrupo.forEach(p => {
-    if(p.golesLocal === null || p.golesVisitante === null) return; // no jugado, se ignora
+    if(p.golesLocal === null || p.golesVisitante === null) return;
 
     const local = stats[p.local];
     const visitante = stats[p.visitante];
@@ -256,21 +526,16 @@ function calcularTabla(equiposDelGrupo, partidosDelGrupo){
     }
   });
 
-  // Calculamos diferencia de gol y convertimos a array ordenado
   const tabla = Object.values(stats).map(e => {
     e.dif = e.gf - e.gc;
     return e;
   });
 
-  // Orden oficial: 1º por puntos, 2º por diferencia de gol, 3º por goles a favor
   tabla.sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
 
   return tabla;
 }
 
-// Devuelve los "numPorGrupo" mejores de cada grupo, ordenados primero por posición
-// dentro de su grupo (1eros antes que 2dos) y luego por fuerza (Pts, Dif, GF).
-// Esto evita que dos 1eros de grupos distintos se enfrenten antes que un 1ero contra un 2do.
 function obtenerClasificados(numPorGrupo = 2){
   const d = disciplinas[disciplinaActual];
   let clasificados = [];
@@ -283,14 +548,12 @@ function obtenerClasificados(numPorGrupo = 2){
     top.forEach((e, pos) => {
       clasificados.push({
         equipo: e.equipo,
-        posGrupo: pos + 1,   // 1 = ganó su grupo, 2 = quedó segundo, etc.
+        posGrupo: pos + 1,
         pts: e.pts, dif: e.dif, gf: e.gf
       });
     });
   });
 
-  // Orden de siembra: primero todos los 1eros (ordenados entre sí por fuerza),
-  // después todos los 2dos (ordenados entre sí por fuerza), etc.
   clasificados.sort((a, b) =>
     a.posGrupo - b.posGrupo ||
     b.pts - a.pts || b.dif - a.dif || b.gf - a.gf
@@ -299,14 +562,12 @@ function obtenerClasificados(numPorGrupo = 2){
   return clasificados;
 }
 
-// Siguiente potencia de 2 igual o mayor a n (6 clasificados -> 8; 4 -> 4; 10 -> 16)
 function siguientePotenciaDeDos(n){
   let p = 1;
   while(p < n) p *= 2;
   return p;
 }
 
-// Orden de siembra estándar de brackets (evita que los mejores sembrados se crucen muy pronto)
 function ordenSiembra(n){
   if(n === 1) return [1];
   const prev = ordenSiembra(n / 2);
@@ -322,14 +583,11 @@ function generarBracket(numPorGrupo = 2){
   const tamanoBracket = siguientePotenciaDeDos(clasificados.length);
   const orden = ordenSiembra(tamanoBracket);
 
-  // Asignamos: siembra 1 = mejor clasificado, siembra 2 = segundo mejor, etc.
   const porSiembra = {};
   clasificados.forEach((c, idx) => { porSiembra[idx + 1] = c.equipo; });
 
-  // Colocamos cada siembra en su posición del bracket; lo que sobra queda como 'BYE'
   const slots = orden.map(siembra => porSiembra[siembra] || 'BYE');
 
-  // Ronda 1: si un equipo le toca contra 'BYE', pasa automáticamente sin jugar
   const ronda1 = [];
   for(let i = 0; i < slots.length; i += 2){
     const local = slots[i];
@@ -342,7 +600,6 @@ function generarBracket(numPorGrupo = 2){
 
   const rondas = [ronda1];
 
-  // Rondas siguientes: se arman vacías ("Por definir") hasta que se jueguen las anteriores
   while(rondas[rondas.length - 1].length > 1){
     const anterior = rondas[rondas.length - 1];
     const siguiente = [];
@@ -368,7 +625,7 @@ function propagarDesde(numRonda){
     for(let i = 0; i < actual.length; i++){
       actual[i].local = anterior[i * 2].ganador || 'Por definir';
       actual[i].visitante = anterior[i * 2 + 1].ganador || 'Por definir';
-      actual[i].ganador = null; // si cambió el rival, hay que re-definir el ganador de esta ronda
+      actual[i].ganador = null;
     }
   }
 }
@@ -410,7 +667,7 @@ function renderizarBracket(){
   const cont = document.getElementById('bracket-eliminacion');
   cont.innerHTML = '';
 
-  const tamanoInicial = d.bracket[0].length * 2; // cuántos equipos entraron a la ronda 1
+  const tamanoInicial = d.bracket[0].length * 2;
   const etiquetas = nombresRonda[tamanoInicial] || d.bracket.map((_, i) => 'Ronda ' + (i + 1));
 
   d.bracket.forEach((ronda, numRonda) => {
@@ -426,7 +683,6 @@ function renderizarBracket(){
       const matchDiv = document.createElement('div');
       matchDiv.className = 'match';
 
-      // Si es la última ronda (1 solo "partido" = la final), mostramos el campeón aparte
       const esFinal = ronda.length === 1 && partido.ganador;
 
       ['local', 'visitante'].forEach(lado => {
@@ -436,7 +692,6 @@ function renderizarBracket(){
         div.className = esGanador ? 'win' : '';
         div.textContent = nombre;
 
-        // Solo se puede elegir ganador si ambos equipos ya están definidos (no 'BYE' ni 'Por definir')
         const jugable = nombre && nombre !== 'BYE' && nombre !== 'Por definir' &&
                          partido.local !== 'Por definir' && partido.visitante !== 'Por definir' &&
                          partido.local !== 'BYE' && partido.visitante !== 'BYE';
@@ -444,12 +699,10 @@ function renderizarBracket(){
         const esBye = partido.local === 'BYE' || partido.visitante === 'BYE';
 
         if(jugable && !partido.ganador){
-          // Partido listo para jugarse: clic para marcar ganador
           div.style.cursor = 'pointer';
           div.title = 'Clic para marcar como ganador';
           div.onclick = () => seleccionarGanador(numRonda, numPartido, nombre);
         } else if(partido.ganador && !esBye){
-          // Partido ya decidido (y NO es un bye automático): clic para deshacer
           div.style.cursor = 'pointer';
           div.title = 'Clic para deshacer este resultado';
           div.onclick = () => deshacerGanador(numRonda, numPartido);
@@ -478,16 +731,15 @@ function renderizarBracket(){
   });
 }
 
-let grupoTablaActual = 0; // índice del grupo que se está viendo en la pantalla de Tabla
+let grupoTablaActual = 0;
 
 function renderizarTabla(){
   const d = disciplinas[disciplinaActual];
-  if(!d.partidos) return; // por si acaso todavía no se generaron partidos
+  if(!d.partidos) return;
 
   document.querySelector('#s3 h1').textContent =
     'Partidos y tabla de posiciones — Grupo ' + (grupoTablaActual + 1);
 
-  // --- Selector de grupo (si hay más de uno) ---
   const selectorCont = document.getElementById('selector-grupo-tabla');
   selectorCont.innerHTML = '';
   if(d.numGrupos > 1){
@@ -503,7 +755,6 @@ function renderizarTabla(){
   const equiposDelGrupo = d.grupos[grupoTablaActual];
   const partidosDelGrupo = d.partidos[grupoTablaActual];
 
-  // --- Tabla de partidos con inputs editables ---
   const contPartidos = document.getElementById('partidos-grupo');
   contPartidos.innerHTML = '';
   partidosDelGrupo.forEach((p, idx) => {
@@ -519,7 +770,6 @@ function renderizarTabla(){
     contPartidos.appendChild(fila);
   });
 
-  // Conectamos cada input para que, al cambiar, actualice los datos y recalcule todo
   contPartidos.querySelectorAll('input').forEach(input => {
     input.addEventListener('change', (e) => {
       const idx = Number(e.target.dataset.idx);
@@ -527,17 +777,16 @@ function renderizarTabla(){
       const valor = e.target.value === '' ? null : Number(e.target.value);
       d.partidos[grupoTablaActual][idx][campo] = valor;
       guardarEstado();
-      renderizarTabla(); // recalcula y redibuja todo de nuevo
+      renderizarTabla();
     });
   });
 
-  // --- Tabla de posiciones calculada ---
   const tabla = calcularTabla(equiposDelGrupo, partidosDelGrupo);
   const contTabla = document.getElementById('tabla-posiciones');
   contTabla.innerHTML =
     '<tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>';
   tabla.forEach((e, pos) => {
-    const esTop = pos < 2; // resaltamos los 2 primeros lugares (clasificados), ajustable
+    const esTop = pos < 2;
     contTabla.innerHTML +=
       '<tr' + (esTop ? ' class="top3"' : '') + '>' +
       '<td>' + (pos+1) + '</td><td>' + e.equipo + '</td><td>' + e.pj + '</td><td>' + e.pg + '</td>' +
@@ -554,14 +803,13 @@ function rehacerSorteo(){
   );
   if(!confirmar) return;
 
-  // Reiniciamos los grupos a vacío, respetando el número de grupos de esta disciplina
   d.grupos = [];
   for(let i=0; i<d.numGrupos; i++){
     d.grupos.push([]);
   }
 
   guardarEstado();
-  seleccionarDisciplina(disciplinaActual, false); // redibuja todo: equipos vuelven a "pendientes"
+  seleccionarDisciplina(disciplinaActual, false);
 }
 
 function agregarEquipo(){
@@ -575,9 +823,9 @@ function agregarEquipo(){
     return;
   }
 
-  d.equipos.push(nombre);   // 👈 esta línea es la que faltaba: ahora sí queda guardado
+  d.equipos.push(nombre);
   guardarEstado();
-  seleccionarDisciplina(disciplinaActual, false); // re-dibuja la lista con el nuevo equipo
+  seleccionarDisciplina(disciplinaActual, false);
   input.value = '';
 }
 
@@ -620,22 +868,25 @@ function ir(i, btn){
     renderizarGrupos();
   }
   if(i === 3){
-    grupoTablaActual = 0; // siempre que se entra a Tabla, arranca mostrando el Grupo 1
+    grupoTablaActual = 0;
     renderizarTabla();
   }
   if(i === 4){
-    generarBracket(2); // el "2" es cuántos clasifican por grupo — ya lo dejamos fijo en 2, según tu regla
+    generarBracket(2);
     renderizarBracket();
+  }
+  if(i === 5){
+    renderizarListaParejas();
+    if(mundial40.bracket) renderizarBracketMundial();
   }
 }
 
-// Mapa de "a qué pantalla regresar" desde cada pantalla actual
 const pantallaAnterior = {
-  1: 0,  // Sorteo → Inicio
-  2: 1,  // Grupos → Sorteo
-  3: 2,  // Tabla → Grupos
-  4: 3,  // Eliminación → Tabla
-  5: 0   // Mundial de 40 → Inicio (porque se accede directo desde Inicio)
+  1: 0,
+  2: 1,
+  3: 2,
+  4: 3,
+  5: 0
 };
 
 function irAtras(actual){
