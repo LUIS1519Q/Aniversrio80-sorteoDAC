@@ -8,19 +8,24 @@
 <body>
 
 <div class="topbar">
-  <div class="brand"><div class="shield">DAC</div> CAMPEONATO ANIVERSARIO 80 DGAC</div>
-  <div style="font-size:11px;">28 jul – 9 ago 2026</div>
+  <div class="brand">
+    <img src="img/logo-dorado.png" alt="Logo DAC 80 años" class="shield">
+    <div class="brand-texto">
+      <span class="brand-titulo">CAMPEONATO ANIVERSARIO 80 DGAC</span>
+      <span class="brand-fecha">AGOSTO 8 - AGOSTO 9, 2026</span>
+    </div>
+  </div>
+    <nav>
+    <button class="active" onclick="ir(0,this)">1. INICIO</button>
+    <button onclick="ir(1,this)">2. SORTEO</button>
+    <button onclick="ir(2,this)">3. GRUPOS</button>
+    <button onclick="ir(3,this)">4. TABLA POSICIONES</button>
+    <button onclick="ir(4,this)">5. ELIMINACIÓN DIRECTA</button>
+    <button onclick="ir(5,this)">6. MUNDIAL DE 40</button>
+  </nav>
   <button id="btn-modo-organizador" onclick="intentarModoOrganizador()" style="margin-left:10px;font-size:12px;padding:4px 10px;cursor:pointer;">🔑 Modo organizador</button>
-</div>
 
-<nav>
-  <button class="active" onclick="ir(0,this)">1. Inicio</button>
-  <button onclick="ir(1,this)">2. Sorteo</button>
-  <button onclick="ir(2,this)">3. Grupos</button>
-  <button onclick="ir(3,this)">4. Tabla posiciones</button>
-  <button onclick="ir(4,this)">5. Eliminación directa</button>
-  <button onclick="ir(5,this)">6. Mundial de 40</button>
-</nav>
+</div>
 
 <main>
 
@@ -28,13 +33,32 @@
   <section class="screen active" id="s0">
     <h1>Seleccionar disciplina</h1>
     <div class="disc-grid">
-      <div class="disc-card" onclick="seleccionarDisciplina('hombres')"><b>⚽ Fútbol Hombres</b><span>8 equipos · 3 grupos</span></div>
-      <div class="disc-card" onclick="seleccionarDisciplina('mujeres')"><b>⚽ Fútbol Mujeres</b><span>3 equipos · 1 grupo</span></div>
-      <div class="disc-card" onclick="seleccionarDisciplina('basquet')"><b>🏀 Básquet Mixto</b><span>8 equipos · 3 grupos</span></div>
-      <div class="disc-card" onclick="seleccionarDisciplina('voley')"><b>🏐 Ecuavoley</b><span>8 equipos · 3 grupos</span></div>
-      <div class="disc-card" onclick="ir(5)"><b>🃏 Mundial de 40</b><span>Parejas · inscripción abierta</span></div>
+      <div class="disc-card" onclick="seleccionarDisciplina('hombres')">
+        <span class="disc-icono">⚽</span>
+        <b>Fútbol Hombres</b>
+        <span>3 equipos · 1 grupo</span>
+      </div>
+      <div class="disc-card" onclick="seleccionarDisciplina('mujeres')">
+        <span class="disc-icono disc-icono--rosa">⚽</span>
+        <b>Fútbol Mujeres</b>
+        <span>3 equipos · 1 grupo</span>
+      </div>
+      <div class="disc-card" onclick="seleccionarDisciplina('basquet')">
+        <span class="disc-icono">🏀</span>
+        <b>Básquet Mixto</b>
+        <span>8 equipos · 3 grupos</span>
+      </div>
+      <div class="disc-card" onclick="seleccionarDisciplina('voley')">
+        <span class="disc-icono">🏐</span>
+        <b>Ecuavoley</b>
+        <span>8 equipos · 3 grupos</span>
+      </div>
+      <div class="disc-card" onclick="ir(5)">
+        <span class="disc-icono">🃏</span>
+        <b>Mundial de 40</b>
+        <span>Parejas</span>
+      </div>
     </div>
-    <p class="add-note">Cada disciplina se configura por separado. El número de equipos y grupos es ajustable, no fijo.</p>
   </section>
 
   <!-- 1. SORTEO -->
@@ -46,7 +70,6 @@
         <input type="text" id="nuevo-equipo" placeholder="Ej: Torre de Control" style="flex:1;padding:8px;border:1px solid var(--linea);">
         <button class="btn" onclick="agregarEquipo()">Agregar equipo</button>
       </div>
-      <p class="add-note">Se pueden seguir agregando equipos aunque el sorteo ya haya iniciado — se ubican en el grupo con menos integrantes.</p>
     </div>
 
     <div class="sorteo-layout">
@@ -148,7 +171,7 @@
   <section class="screen" id="s5">
     <h1>Mundial de 40 — Bracket eliminación directa</h1>
     <div class="card" id="card-inscribir-pareja">
-      <b>Inscripción de parejas (abierta, sin límite fijo)</b>
+      <b>Inscripción de parejas</b>
       <div class="btn-row">
         <input type="text" id="mundial-jugador1" placeholder="Jugador 1" style="padding:8px;border:1px solid var(--linea);">
         <input type="text" id="mundial-jugador2" placeholder="Jugador 2" style="padding:8px;border:1px solid var(--linea);">
