@@ -105,7 +105,7 @@
       </div>
     </div>
 
-    <div class="btn-row"><button class="btn oro" onclick="ir(2)">Ver grupos completos →</button></div>
+    <div class="btn-row"><button class="btn" onclick="irAtras(1)">← Atrás</button><button class="btn oro" onclick="ir(2)">Ver grupos completos →</button></div>
   </section>
 
   <!-- 2. GRUPOS -->
@@ -126,50 +126,42 @@
       </div>
     </div>
     <p class="add-note">El sistema arma automáticamente todos los cruces posibles dentro de cada grupo (todos contra todos): 1vs2, 1vs3, 2vs3.</p>
-    <div class="btn-row"><button class="btn oro" onclick="ir(3)">Ver partidos y tabla →</button></div>
+    <div class="btn-row"><button class="btn" onclick="irAtras(2)">← Atrás</button><button class="btn oro" onclick="generarPartidos(); ir(3)">Ver partidos y tabla →</button></div>
   </section>
 
   <!-- 3. TABLA -->
   <section class="screen" id="s3">
     <h1>Partidos y tabla de posiciones — Grupo 1</h1>
+
+    <div class="btn-row" id="selector-grupo-tabla" style="margin-bottom:14px;"></div>
+
     <div class="card">
       <b>Partidos del grupo</b>
-      <table style="margin-top:8px;">
-        <tr><td>Torre de Control</td><td><input style="width:30px" value="2"></td><td>vs</td><td><input style="width:30px" value="1"></td><td>Radar 1</td><td><span class="pill">Finalizado</span></td></tr>
-        <tr><td>Torre de Control</td><td><input style="width:30px" placeholder="-"></td><td>vs</td><td><input style="width:30px" placeholder="-"></td><td>Aeroclub</td><td><span class="pill" style="background:var(--linea);color:#555">Pendiente</span></td></tr>
-        <tr><td>Radar 1</td><td><input style="width:30px" placeholder="-"></td><td>vs</td><td><input style="width:30px" placeholder="-"></td><td>Aeroclub</td><td><span class="pill" style="background:var(--linea);color:#555">Pendiente</span></td></tr>
+      <table style="margin-top:8px;" id="partidos-grupo">
+        <!-- Las filas de partidos se generan dinámicamente con JS -->
       </table>
     </div>
     <div class="card">
       <b>Tabla de posiciones (auto-calculada)</b>
-      <table>
-        <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>
-        <tr class="top3"><td>1</td><td>Torre de Control</td><td>1</td><td>1</td><td>0</td><td>0</td><td>+1</td><td>3</td></tr>
-        <tr><td>2</td><td>Aeroclub</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-        <tr><td>3</td><td>Radar 1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>-1</td><td>0</td></tr>
+      <table id="tabla-posiciones">
+        <!-- Las filas de la tabla se generan dinámicamente con JS -->
       </table>
     </div>
-    <div class="btn-row"><button class="btn oro" onclick="ir(4)">Ir a eliminación directa →</button></div>
+    <div class="btn-row">
+      <button class="btn" onclick="irAtras(3)">← Atrás</button>
+      <button class="btn oro" onclick="ir(4)">Ir a eliminación directa →</button>
+    </div>
   </section>
 
   <!-- 4. ELIMINACION -->
   <section class="screen" id="s4">
     <h1>Eliminación directa — Fútbol Hombres</h1>
-    <p class="add-note">Se cruzan los mejores puntajes de cada grupo, tipo mundial: 1°G1 vs 2°G2, 1°G2 vs 2°G3, etc.</p>
-    <div class="bracket">
-      <div class="ronda">
-        <div class="ronda-label">Semifinal</div>
-        <div class="match"><div class="win">Torre de Control</div><div>Los Pilotos</div></div>
-        <div class="match"><div>Escuadrón Sur</div><div class="win">Pista Norte</div></div>
-      </div>
-      <div class="ronda">
-        <div class="ronda-label">Final</div>
-        <div class="match"><div class="win">Torre de Control</div><div>Pista Norte</div></div>
-      </div>
-      <div class="ronda">
-        <div class="ronda-label">Campeón</div>
-        <div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 Torre de Control</div></div>
-      </div>
+    <p class="add-note">Clasifican los 2 mejores de cada grupo. Si el número no arma un bracket parejo, los mejores puntajes generales avanzan directo con "bye". Haz clic sobre un equipo para marcarlo como ganador de su partido.</p>
+    <div class="bracket" id="bracket-eliminacion">
+      <!-- El bracket se genera dinámicamente con JS -->
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="irAtras(4)">← Atrás</button>
     </div>
   </section>
 
@@ -209,6 +201,9 @@
         <div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 Pareja 1</div></div>
       </div>
     </div>
+    <div class="btn-row">
+  <button class="btn" onclick="irAtras(5)">← Atrás</button>
+</div>
   </section>
 
 </main>
