@@ -189,7 +189,7 @@ function renderizarListaParejas(){
     span.textContent = nombrePareja(pareja);
     div.appendChild(span);
 
-    if(!parejaYaJugo(nombrePareja(pareja))){
+    if(!parejaYaJugo(nombrePareja(pareja)) && esOrganizador()){
       const btnEditar = document.createElement('button');
       btnEditar.textContent = '✏️';
       btnEditar.onclick = () => editarPareja(pareja.id);
@@ -278,10 +278,10 @@ function renderizarBracketMundial(){
                          partido.local !== 'Por definir' && partido.visitante !== 'Por definir' &&
                          partido.local !== 'BYE' && partido.visitante !== 'BYE';
 
-        if(jugable && !partido.ganador){
+        if(jugable && !partido.ganador && esOrganizador()){
           div.style.cursor = 'pointer';
           div.onclick = () => seleccionarGanadorMundial(numRonda, numPartido, nombre);
-        } else if(partido.ganador && !esBye){
+        } else if(partido.ganador && !esBye && esOrganizador()){
           div.style.cursor = 'pointer';
           div.onclick = () => deshacerGanadorMundial(numRonda, numPartido);
         }
@@ -342,6 +342,51 @@ async function cargarEstado(){
   }
 }
 
+const PIN_ORGANIZADOR = 'dgac26';
+
+function esOrganizador(){
+  return sessionStorage.getItem('modoOrganizador') === 'true';
+}
+function intentarModoOrganizador(){
+  if(esOrganizador()){
+    alert('Ya estás en modo organizador.');
+    return;
+  }
+
+  const exito = pedirPin();
+  if(exito){
+    aplicarModoLectura();
+    ir(0);
+  }
+}
+function pedirPin(){
+  const intento = prompt('Ingresa el PIN de organizador (o cancela para ver en modo lectura):');
+  if(intento === null) return false;
+
+  if(intento.trim() === PIN_ORGANIZADOR){
+    sessionStorage.setItem('modoOrganizador', 'true');
+    return true;
+  } else {
+    alert('PIN incorrecto. Sigues en modo lectura.');
+    return false;
+  }
+}
+
+function aplicarModoLectura(){
+  const modoLectura = !esOrganizador();
+
+  const idsAOcultar = [
+    'card-agregar-equipo',
+    'botones-sorteo',
+    'card-inscribir-pareja',
+    'boton-generar-bracket-mundial'
+  ];
+
+  idsAOcultar.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = modoLectura ? 'none' : '';
+  });
+}
 let disciplinaActual = 'hombres';
 
 function seleccionarDisciplina(clave, navegar){
@@ -376,7 +421,7 @@ function seleccionarDisciplina(clave, navegar){
       etiqueta.className = 'etiqueta-grupo';
       etiqueta.textContent = 'Grupo ' + asignados[nombre];
       li.appendChild(etiqueta);
-    } else {
+    } else if(esOrganizador()){
       const btnEditar = document.createElement('button');
       btnEditar.textContent = '✏️';
       btnEditar.title = 'Renombrar';
@@ -708,11 +753,11 @@ function renderizarBracket(){
 
         const esBye = partido.local === 'BYE' || partido.visitante === 'BYE';
 
-        if(jugable && !partido.ganador){
+        if(jugable && !partido.ganador && esOrganizador()){
           div.style.cursor = 'pointer';
           div.title = 'Clic para marcar como ganador';
           div.onclick = () => seleccionarGanador(numRonda, numPartido, nombre);
-        } else if(partido.ganador && !esBye){
+        } else if(partido.ganador && !esBye && esOrganizador()){
           div.style.cursor = 'pointer';
           div.title = 'Clic para deshacer este resultado';
           div.onclick = () => deshacerGanador(numRonda, numPartido);
@@ -905,6 +950,12 @@ function irAtras(actual){
 
 async function iniciarApp(){
   await cargarEstado();
+
+  if(!esOrganizador()){
+    pedirPin();
+  }
+
+  aplicarModoLectura();
   seleccionarDisciplina('hombres', false);
   ir(0);
 }
