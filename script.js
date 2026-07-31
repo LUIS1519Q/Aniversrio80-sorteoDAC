@@ -306,14 +306,51 @@ function renderizarBracketMundial(){
   });
 }
 
+function guardarHistorial(paquete){
+  const marcaTiempo = Date.now();
+  window.firebaseSet(window.firebaseRef(window.firebaseDB, 'historial/' + marcaTiempo), paquete)
+    .catch(error => {
+      console.error('Error al guardar historial:', error);
+    });
+}
+
 const STORAGE_KEY = 'dgac_estado_disciplinas';
 
 function guardarEstado(){
   const paquete = { disciplinas: disciplinas, mundial40: mundial40 };
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'estado'), paquete)
+    .then(() => {
+      guardarHistorial(paquete);
+    })
     .catch(error => {
       console.error('Error al guardar en Firebase:', error);
     });
+}
+
+function convertirArraysFirebase(valor){
+  if(Array.isArray(valor)){
+    return valor.map(convertirArraysFirebase);
+  }
+
+  if(valor && typeof valor === 'object'){
+    const claves = Object.keys(valor);
+    const esArrayConvertido = claves.length > 0 && claves.every(k => /^\d+$/.test(k));
+
+    if(esArrayConvertido){
+      const maxIndice = Math.max(...claves.map(Number));
+      const arr = [];
+      for(let i = 0; i <= maxIndice; i++){
+        arr[i] = valor[i] !== undefined ? convertirArraysFirebase(valor[i]) : [];
+      }
+      return arr;
+    } else {
+      const nuevo = {};
+      claves.forEach(k => { nuevo[k] = convertirArraysFirebase(valor[k]); });
+      return nuevo;
+    }
+  }
+
+  return valor;
 }
 
 async function cargarEstado(){
@@ -321,10 +358,10 @@ async function cargarEstado(){
     const snapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'estado'));
 
     if(!snapshot.exists()){
-      return;
+      return true;
     }
 
-    const datosGuardados = snapshot.val();
+    const datosGuardados = convertirArraysFirebase(snapshot.val());
 
     if(datosGuardados.disciplinas){
       Object.keys(datosGuardados.disciplinas).forEach(clave => {
@@ -337,8 +374,11 @@ async function cargarEstado(){
     if(datosGuardados.mundial40){
       mundial40 = datosGuardados.mundial40;
     }
+
+    return true;
   } catch (error) {
     console.error('Error al cargar desde Firebase:', error);
+    return false;
   }
 }
 
@@ -949,7 +989,17 @@ function irAtras(actual){
 }
 
 async function iniciarApp(){
-  await cargarEstado();
+  const cargaExitosa = await cargarEstado();
+
+  if(!cargaExitosa){
+    document.body.innerHTML =
+      '<div style="padding:40px;text-align:center;font-family:sans-serif;">' +
+      '<h1>⚠️ No se pudo conectar con la base de datos</h1>' +
+      '<p>Por seguridad, la app no va a continuar para evitar guardar datos incorrectos.</p>' +
+      '<p>Verifica tu conexión a internet y recarga la página (F5).</p>' +
+      '</div>';
+    return;
+  }
 
   if(!esOrganizador()){
     pedirPin();
