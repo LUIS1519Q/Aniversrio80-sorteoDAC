@@ -314,10 +314,29 @@ function guardarHistorial(paquete){
     });
 }
 
+function limpiarUndefined(valor){
+  if(Array.isArray(valor)){
+    return valor.map(limpiarUndefined);
+  }
+
+  if(valor && typeof valor === 'object'){
+    const limpio = {};
+    Object.keys(valor).forEach(clave => {
+      if(valor[clave] !== undefined){
+        limpio[clave] = limpiarUndefined(valor[clave]);
+      }
+    });
+    return limpio;
+  }
+
+  return valor;
+}
+
 const STORAGE_KEY = 'dgac_estado_disciplinas';
 
 function guardarEstado(){
-  const paquete = { disciplinas: disciplinas, mundial40: mundial40 };
+  const paqueteOriginal = { disciplinas: disciplinas, mundial40: mundial40 };
+  const paquete = limpiarUndefined(paqueteOriginal);
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'estado'), paquete)
     .then(() => {
       guardarHistorial(paquete);
