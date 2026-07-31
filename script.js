@@ -366,7 +366,15 @@ async function cargarEstado(){
     if(datosGuardados.disciplinas){
       Object.keys(datosGuardados.disciplinas).forEach(clave => {
         if(disciplinas[clave]){
-          disciplinas[clave] = datosGuardados.disciplinas[clave];
+          const guardado = datosGuardados.disciplinas[clave];
+          disciplinas[clave] = {
+            titulo: guardado.titulo || disciplinas[clave].titulo,
+            numGrupos: guardado.numGrupos || disciplinas[clave].numGrupos,
+            equipos: guardado.equipos || [],
+            grupos: guardado.grupos || undefined,
+            partidos: guardado.partidos || undefined,
+            bracket: guardado.bracket || undefined
+          };
         }
       });
     }
