@@ -238,16 +238,42 @@ function deshacerGanadorMundial(numRonda, numPartido){
   renderizarBracketMundial();
 }
 
-function propagarDesdeMundial(numRonda){
-  for(let r = numRonda + 1; r < mundial40.bracket.length; r++){
-    const anterior = mundial40.bracket[r - 1];
-    const actual = mundial40.bracket[r];
+function propagarDesde(numRonda){
+  const d = disciplinas[disciplinaActual];
+  for(let r = numRonda + 1; r < d.bracket.length; r++){
+    const anterior = d.bracket[r - 1];
+    const actual = d.bracket[r];
     for(let i = 0; i < actual.length; i++){
       actual[i].local = anterior[i * 2].ganador || 'Por definir';
       actual[i].visitante = anterior[i * 2 + 1].ganador || 'Por definir';
       actual[i].ganador = null;
+      actual[i].golesLocal = null;
+      actual[i].golesVisitante = null;
     }
   }
+}
+
+function actualizarMarcadorEliminacion(numRonda, numPartido, campo, valor){
+  const d = disciplinas[disciplinaActual];
+  const partido = d.bracket[numRonda][numPartido];
+  partido[campo] = valor;
+
+  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
+    if(partido.golesLocal === partido.golesVisitante){
+      alert('No puede haber empate en eliminación directa. Corrige el marcador.');
+      partido.golesLocal = null;
+      partido.golesVisitante = null;
+      partido.ganador = null;
+    } else {
+      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
+    }
+  } else {
+    partido.ganador = null;
+  }
+
+  propagarDesde(numRonda);
+  guardarEstado();
+  renderizarBracket();
 }
 
 const nombresRondaMundial = {
@@ -463,9 +489,9 @@ function aplicarModoLectura(){
     'card-agregar-equipo',
     'botones-sorteo',
     'card-inscribir-pareja',
-    'boton-generar-bracket-mundial'
+    'boton-generar-bracket-mundial',
+    'boton-regenerar-bracket'
   ];
-
   idsAOcultar.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = modoLectura ? 'none' : '';
@@ -791,6 +817,7 @@ function ordenSiembra(n){
 function generarBracket(numPorGrupo = 2){
   const d = disciplinas[disciplinaActual];
   const clasificados = obtenerClasificados(numPorGrupo);
+  const bracketPrevio = d.bracket;
 
   const tamanoBracket = siguientePotenciaDeDos(clasificados.length);
   const orden = ordenSiembra(tamanoBracket);
@@ -805,9 +832,30 @@ function generarBracket(numPorGrupo = 2){
     const local = slots[i];
     const visitante = slots[i + 1];
     let ganador = null;
+    let golesLocal = null;
+    let golesVisitante = null;
+
     if(local === 'BYE') ganador = visitante;
     else if(visitante === 'BYE') ganador = local;
-    ronda1.push({ local, visitante, ganador });
+
+    if(bracketPrevio && bracketPrevio[0]){
+      const previo = bracketPrevio[0].find(p =>
+        (p.local === local && p.visitante === visitante) ||
+        (p.local === visitante && p.visitante === local)
+      );
+      if(previo){
+        if(previo.local === local){
+          golesLocal = previo.golesLocal ?? null;
+          golesVisitante = previo.golesVisitante ?? null;
+        } else {
+          golesLocal = previo.golesVisitante ?? null;
+          golesVisitante = previo.golesLocal ?? null;
+        }
+        if(previo.ganador) ganador = previo.ganador;
+      }
+    }
+
+    ronda1.push({ local, visitante, ganador, golesLocal, golesVisitante });
   }
 
   const rondas = [ronda1];
@@ -819,7 +867,9 @@ function generarBracket(numPorGrupo = 2){
       siguiente.push({
         local: anterior[i].ganador || 'Por definir',
         visitante: anterior[i + 1].ganador || 'Por definir',
-        ganador: null
+        ganador: null,
+        golesLocal: null,
+        golesVisitante: null
       });
     }
     rondas.push(siguiente);
@@ -896,31 +946,36 @@ function renderizarBracket(){
       matchDiv.className = 'match';
 
       const esFinal = ronda.length === 1 && partido.ganador;
+      const esBye = partido.local === 'BYE' || partido.visitante === 'BYE';
+      const noDefinido = partido.local === 'Por definir' || partido.visitante === 'Por definir';
+      const soloLectura = !esOrganizador() || esBye || noDefinido;
 
-      ['local', 'visitante'].forEach(lado => {
+      ['local','visitante'].forEach(lado => {
         const nombre = partido[lado];
-        const div = document.createElement('div');
+        const campoGoles = lado === 'local' ? 'golesLocal' : 'golesVisitante';
+        const fila = document.createElement('div');
+        fila.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:6px;';
+
         const esGanador = partido.ganador && partido.ganador === nombre;
-        div.className = esGanador ? 'win' : '';
-        div.textContent = nombre;
 
-        const jugable = nombre && nombre !== 'BYE' && nombre !== 'Por definir' &&
-                         partido.local !== 'Por definir' && partido.visitante !== 'Por definir' &&
-                         partido.local !== 'BYE' && partido.visitante !== 'BYE';
+        const spanNombre = document.createElement('span');
+        spanNombre.textContent = nombre;
+        if(esGanador) spanNombre.style.cssText = 'color:var(--oro-suave);font-weight:bold;';
+        fila.appendChild(spanNombre);
 
-        const esBye = partido.local === 'BYE' || partido.visitante === 'BYE';
+        const inputGoles = document.createElement('input');
+        inputGoles.type = 'number';
+        inputGoles.min = '0';
+        inputGoles.style.cssText = 'width:36px;';
+        inputGoles.value = partido[campoGoles] ?? '';
+        inputGoles.disabled = soloLectura;
+        inputGoles.addEventListener('change', (e) => {
+          const valor = e.target.value === '' ? null : Number(e.target.value);
+          actualizarMarcadorEliminacion(numRonda, numPartido, campoGoles, valor);
+        });
+        fila.appendChild(inputGoles);
 
-        if(jugable && !partido.ganador && esOrganizador()){
-          div.style.cursor = 'pointer';
-          div.title = 'Clic para marcar como ganador';
-          div.onclick = () => seleccionarGanador(numRonda, numPartido, nombre);
-        } else if(partido.ganador && !esBye && esOrganizador()){
-          div.style.cursor = 'pointer';
-          div.title = 'Clic para deshacer este resultado';
-          div.onclick = () => deshacerGanador(numRonda, numPartido);
-        }
-
-        matchDiv.appendChild(div);
+        matchDiv.appendChild(fila);
       });
 
       rondaDiv.appendChild(matchDiv);
@@ -942,7 +997,6 @@ function renderizarBracket(){
     }
   });
 }
-
 let grupoTablaActual = 0;
 
 function renderizarTabla(){
@@ -1086,7 +1140,9 @@ function ir(i, btn){
     renderizarTabla();
   }
   if(i === 4){
-    generarBracket(2);
+    if(!disciplinas[disciplinaActual].bracket){
+      generarBracket(2);
+    }
     renderizarBracket();
   }
   if(i === 5){

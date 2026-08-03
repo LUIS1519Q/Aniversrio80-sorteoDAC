@@ -158,7 +158,10 @@
   <!-- 4. ELIMINACION -->
   <section class="screen" id="s4">
     <h1>Eliminación directa — Fútbol Hombres</h1>
-    <p class="add-note">Clasifican los 2 mejores de cada grupo. Si el número no arma un bracket parejo, los mejores puntajes generales avanzan directo con "bye". Haz clic sobre un equipo para marcarlo como ganador de su partido.</p>
+    <p class="add-note">Clasifican los 2 mejores de cada grupo. Si el número no arma un bracket parejo, los mejores puntajes generales avanzan directo con "bye". Coloca el marcador de cada equipo y el ganador pasa a la siguiente ronda automaticamente.</p>
+    <div class="btn-row" id="boton-regenerar-bracket">
+      <button class="btn" onclick="generarBracket(2); renderizarBracket();" style="background:var(--rojo-tab);">🔄 Regenerar bracket</button>
+    </div>
     <div class="bracket" id="bracket-eliminacion">
       <!-- El bracket se genera dinámicamente con JS -->
     </div>
