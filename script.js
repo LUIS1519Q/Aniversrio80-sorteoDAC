@@ -314,10 +314,29 @@ function guardarHistorial(paquete){
     });
 }
 
+function limpiarUndefined(valor){
+  if(Array.isArray(valor)){
+    return valor.map(limpiarUndefined);
+  }
+
+  if(valor && typeof valor === 'object'){
+    const limpio = {};
+    Object.keys(valor).forEach(clave => {
+      if(valor[clave] !== undefined){
+        limpio[clave] = limpiarUndefined(valor[clave]);
+      }
+    });
+    return limpio;
+  }
+
+  return valor;
+}
+
 const STORAGE_KEY = 'dgac_estado_disciplinas';
 
 function guardarEstado(){
-  const paquete = { disciplinas: disciplinas, mundial40: mundial40 };
+  const paqueteOriginal = { disciplinas: disciplinas, mundial40: mundial40 };
+  const paquete = limpiarUndefined(paqueteOriginal);
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'estado'), paquete)
     .then(() => {
       guardarHistorial(paquete);
@@ -600,7 +619,7 @@ function calcularTabla(equiposDelGrupo, partidosDelGrupo){
   });
 
   partidosDelGrupo.forEach(p => {
-    if(p.golesLocal === null || p.golesVisitante === null) return;
+    if(typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number') return;
 
     const local = stats[p.local];
     const visitante = stats[p.visitante];
@@ -853,7 +872,7 @@ function renderizarTabla(){
   const contPartidos = document.getElementById('partidos-grupo');
   contPartidos.innerHTML = '';
   partidosDelGrupo.forEach((p, idx) => {
-    const jugado = p.golesLocal !== null && p.golesVisitante !== null;
+    const jugado = typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number';
     const fila = document.createElement('tr');
     const soloLectura = !esOrganizador();
     fila.innerHTML =
@@ -877,6 +896,7 @@ function renderizarTabla(){
       renderizarTabla();
     });
   });
+
   const tabla = calcularTabla(equiposDelGrupo, partidosDelGrupo);
   const contTabla = document.getElementById('tabla-posiciones');
   contTabla.innerHTML =
