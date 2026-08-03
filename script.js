@@ -627,7 +627,7 @@ function calcularTabla(equiposDelGrupo, partidosDelGrupo){
   });
 
   partidosDelGrupo.forEach(p => {
-    if(p.golesLocal === null || p.golesVisitante === null) return;
+    if(typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number') return;
 
     const local = stats[p.local];
     const visitante = stats[p.visitante];
@@ -880,13 +880,14 @@ function renderizarTabla(){
   const contPartidos = document.getElementById('partidos-grupo');
   contPartidos.innerHTML = '';
   partidosDelGrupo.forEach((p, idx) => {
-    const jugado = p.golesLocal !== null && p.golesVisitante !== null;
+    const jugado = typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number';
     const fila = document.createElement('tr');
+    const soloLectura = !esOrganizador();
     fila.innerHTML =
       '<td>' + p.local + '</td>' +
-      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesLocal ?? '') + '" data-idx="' + idx + '" data-campo="golesLocal"></td>' +
+      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesLocal ?? '') + '" data-idx="' + idx + '" data-campo="golesLocal"' + (soloLectura ? ' disabled' : '') + '></td>' +
       '<td>vs</td>' +
-      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesVisitante ?? '') + '" data-idx="' + idx + '" data-campo="golesVisitante"></td>' +
+      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesVisitante ?? '') + '" data-idx="' + idx + '" data-campo="golesVisitante"' + (soloLectura ? ' disabled' : '') + '></td>' +
       '<td>' + p.visitante + '</td>' +
       '<td><span class="pill" style="' + (jugado ? '' : 'background:var(--linea);color:#555') + '">' + (jugado ? 'Finalizado' : 'Pendiente') + '</span></td>';
     contPartidos.appendChild(fila);
@@ -894,6 +895,7 @@ function renderizarTabla(){
 
   contPartidos.querySelectorAll('input').forEach(input => {
     input.addEventListener('change', (e) => {
+      if(!esOrganizador()) return;
       const idx = Number(e.target.dataset.idx);
       const campo = e.target.dataset.campo;
       const valor = e.target.value === '' ? null : Number(e.target.value);
