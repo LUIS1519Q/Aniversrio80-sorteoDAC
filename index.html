@@ -64,6 +64,11 @@
   <!-- 1. SORTEO -->
   <section class="screen" id="s1">
     <h1 id="titulo-sorteo">Sorteo de equipos — Fútbol Hombres</h1>
+    <div class="card" id="card-num-grupos">
+      <label style="font-size:13px;">Número de grupos</label><br>
+      <select id="selector-num-grupos" onchange="cambiarNumGrupos(this.value)"></select>
+    </div>
+
     <div class="card" id="card-agregar-equipo">
       <label style="font-size:13px;">Nombre del equipo</label><br>
       <div class="btn-row">

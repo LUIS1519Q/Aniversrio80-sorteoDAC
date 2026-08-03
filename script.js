@@ -188,6 +188,36 @@ function rehacerSorteoMundial(){
   renderizarBracketMundial();
 }
 
+function cambiarNumGrupos(valorTexto){
+  if(!esOrganizador()) return;
+
+  const nuevo = Number(valorTexto);
+  const d = disciplinas[disciplinaActual];
+
+  if(nuevo === d.numGrupos) return;
+
+  const confirmar = confirm(
+    'Cambiar el número de grupos a ' + nuevo + ' va a reiniciar el sorteo actual.\n' +
+    'Todos los equipos volverán a la lista de pendientes. Esta acción no se puede deshacer.'
+  );
+
+  if(!confirmar){
+    seleccionarDisciplina(disciplinaActual, false);
+    return;
+  }
+
+  d.numGrupos = nuevo;
+  d.grupos = [];
+  for(let i = 0; i < nuevo; i++){
+    d.grupos.push([]);
+  }
+  d.partidos = undefined;
+  d.bracket = undefined;
+
+  guardarEstado();
+  seleccionarDisciplina(disciplinaActual, false);
+}
+
 function renderizarListaParejas(){
   const cont = document.getElementById('lista-parejas-mundial');
   if(!cont) return;
@@ -482,7 +512,8 @@ function aplicarModoLectura(){
     'botones-sorteo',
     'card-inscribir-pareja',
     'boton-generar-bracket-mundial',
-    'boton-regenerar-bracket'
+    'boton-regenerar-bracket',
+    'card-num-grupos'
   ];
   idsAOcultar.forEach(id => {
     const el = document.getElementById(id);
@@ -496,6 +527,16 @@ function seleccionarDisciplina(clave, navegar){
   disciplinaActual = clave;
   const d = disciplinas[clave];
   document.getElementById('titulo-sorteo').textContent = 'Sorteo de equipos — ' + d.titulo;
+
+  const selectorNumGrupos = document.getElementById('selector-num-grupos');
+  selectorNumGrupos.innerHTML = '';
+  for(let i = 1; i <= 8; i++){
+    const opcion = document.createElement('option');
+    opcion.value = i;
+    opcion.textContent = i + (i === 1 ? ' grupo' : ' grupos');
+    if(i === d.numGrupos) opcion.selected = true;
+    selectorNumGrupos.appendChild(opcion);
+  }
 
   if(!d.grupos){
     d.grupos = [];
