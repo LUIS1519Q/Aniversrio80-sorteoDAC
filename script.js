@@ -171,6 +171,23 @@ function generarBracketMundial(){
   guardarEstado();
 }
 
+function rehacerSorteoMundial(){
+  if(!mundial40.bracket){
+    alert('Todavía no hay un bracket generado para rehacer.');
+    return;
+  }
+
+  const confirmar = confirm(
+    '¿Seguro que quieres rehacer el sorteo del Mundial de 40?\n' +
+    'El bracket actual se va a borrar. Las parejas inscritas NO se eliminan, solo se sortean de nuevo.'
+  );
+  if(!confirmar) return;
+
+  mundial40.bracket = null;
+  guardarEstado();
+  renderizarBracketMundial();
+}
+
 function renderizarListaParejas(){
   const cont = document.getElementById('lista-parejas-mundial');
   if(!cont) return;
