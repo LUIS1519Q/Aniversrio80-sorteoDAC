@@ -233,11 +233,29 @@ tr.top3 td{background:rgba(232,184,75,.15);font-weight:bold;color:var(--oro-suav
 .pendientes-ul li{
   padding:9px 10px;border-bottom:1px dashed var(--linea);font-size:13px;
   display:flex;align-items:center;justify-content:space-between;gap:8px;
+  flex-wrap:wrap;
   transition:.25s;color:var(--hueso);
 }
 .pendientes-ul li.asignado{
   color:#6B7684;text-decoration:line-through;text-decoration-color:var(--oro);
   text-decoration-thickness:2px;
+}
+.pendientes-ul li.asignado select,
+.pendientes-ul li.asignado button{
+  text-decoration:none;
+}
+.pendientes-ul li select{
+  background:var(--azul-profundo);
+  color:var(--hueso);
+  border:1px solid var(--azul-cielo);
+  border-radius:2px;
+  font-size:12px;
+  padding:4px 6px;
+}
+.pendientes-ul li button{
+  font-size:11px;
+  padding:5px 8px;
+  white-space:nowrap;
 }
 .pendientes-ul li .etiqueta-grupo{
   font-size:10px;background:var(--azul-cielo);color:white;padding:2px 7px;

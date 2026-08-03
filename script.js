@@ -497,7 +497,45 @@ function seleccionarDisciplina(clave, navegar){
       etiqueta.className = 'etiqueta-grupo';
       etiqueta.textContent = 'Grupo ' + asignados[nombre];
       li.appendChild(etiqueta);
+
+      if(esOrganizador()){
+        const selectGrupo = document.createElement('select');
+        selectGrupo.style.marginLeft = '6px';
+        for(let i = 1; i <= d.numGrupos; i++){
+          const opcion = document.createElement('option');
+          opcion.value = i - 1;
+          opcion.textContent = 'Grupo ' + i;
+          if(i === asignados[nombre]) opcion.selected = true;
+          selectGrupo.appendChild(opcion);
+        }
+        li.appendChild(selectGrupo);
+
+        const btnMover = document.createElement('button');
+        btnMover.textContent = '↔️ Mover';
+        btnMover.onclick = () => colocarEquipoEnGrupo(nombre, Number(selectGrupo.value));
+        li.appendChild(btnMover);
+      }
     } else if(esOrganizador()){
+      const selectGrupo = document.createElement('select');
+      selectGrupo.style.marginLeft = '6px';
+      for(let i = 1; i <= d.numGrupos; i++){
+        const opcion = document.createElement('option');
+        opcion.value = i - 1;
+        opcion.textContent = 'Grupo ' + i;
+        selectGrupo.appendChild(opcion);
+      }
+      li.appendChild(selectGrupo);
+
+      const btnColocar = document.createElement('button');
+      btnColocar.textContent = '🎯 Colocar';
+      btnColocar.onclick = () => colocarEquipoEnGrupo(nombre, Number(selectGrupo.value));
+      li.appendChild(btnColocar);
+
+      const btnSortear = document.createElement('button');
+      btnSortear.textContent = '🎲 Sortear';
+      btnSortear.onclick = () => sortearEquipoEspecifico(nombre);
+      li.appendChild(btnSortear);
+
       const btnEditar = document.createElement('button');
       btnEditar.textContent = '✏️';
       btnEditar.title = 'Renombrar';
@@ -561,6 +599,41 @@ function sortearUno(){
 
   guardarEstado();
 
+  seleccionarDisciplina(disciplinaActual, false);
+}
+
+function sortearEquipoEspecifico(nombre){
+  const d = disciplinas[disciplinaActual];
+
+  d.grupos.forEach(g => {
+    const idx = g.indexOf(nombre);
+    if(idx !== -1) g.splice(idx, 1);
+  });
+
+  const minTamano = Math.min(...d.grupos.map(g => g.length));
+  const candidatos = [];
+  d.grupos.forEach((grupoArray, idx) => {
+    if(grupoArray.length === minTamano) candidatos.push(idx);
+  });
+
+  const grupoIdx = candidatos[Math.floor(Math.random() * candidatos.length)];
+  d.grupos[grupoIdx].push(nombre);
+
+  guardarEstado();
+  seleccionarDisciplina(disciplinaActual, false);
+}
+
+function colocarEquipoEnGrupo(nombre, grupoIdx){
+  const d = disciplinas[disciplinaActual];
+
+  d.grupos.forEach(g => {
+    const idx = g.indexOf(nombre);
+    if(idx !== -1) g.splice(idx, 1);
+  });
+
+  d.grupos[grupoIdx].push(nombre);
+
+  guardarEstado();
   seleccionarDisciplina(disciplinaActual, false);
 }
 
