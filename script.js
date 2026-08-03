@@ -809,21 +809,43 @@ function calcularTabla(equiposDelGrupo, partidosDelGrupo){
 
 function obtenerClasificados(numPorGrupo = 2){
   const d = disciplinas[disciplinaActual];
-  let clasificados = [];
+  const numGrupos = d.grupos.length;
 
+  let candidatosTodos = [];
   d.grupos.forEach((equiposDelGrupo, idxGrupo) => {
     const partidosDelGrupo = d.partidos[idxGrupo];
     const tabla = calcularTabla(equiposDelGrupo, partidosDelGrupo);
-    const top = tabla.slice(0, numPorGrupo);
-
-    top.forEach((e, pos) => {
-      clasificados.push({
+    tabla.forEach((e, pos) => {
+      candidatosTodos.push({
         equipo: e.equipo,
         posGrupo: pos + 1,
+        grupoIdx: idxGrupo,
         pts: e.pts, dif: e.dif, gf: e.gf
       });
     });
   });
+
+  let clasificados;
+
+  if(numGrupos === 1 || numGrupos % 2 === 0){
+    clasificados = candidatosTodos.filter(c => c.posGrupo <= numPorGrupo);
+  } else {
+    const ganadores = candidatosTodos.filter(c => c.posGrupo === 1);
+    const tamanoObjetivo = siguientePotenciaDeDos(ganadores.length);
+    const faltantes = tamanoObjetivo - ganadores.length;
+
+    let extras = [];
+    if(faltantes > 0){
+      const resto = candidatosTodos.filter(c => c.posGrupo > 1);
+      resto.sort((a, b) =>
+        a.posGrupo - b.posGrupo ||
+        b.pts - a.pts || b.dif - a.dif || b.gf - a.gf
+      );
+      extras = resto.slice(0, faltantes);
+    }
+
+    clasificados = ganadores.concat(extras);
+  }
 
   clasificados.sort((a, b) =>
     a.posGrupo - b.posGrupo ||
@@ -847,18 +869,53 @@ function ordenSiembra(n){
   return resultado;
 }
 
+function armarCrucesSinRepetirGrupo(clasificados){
+  const ganadores = clasificados.filter(c => c.posGrupo === 1)
+    .slice().sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+
+  const otrosDisponibles = clasificados.filter(c => c.posGrupo !== 1)
+    .slice().sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+
+  const resultado = [];
+
+  ganadores.forEach(ganador => {
+    let idxElegido = -1;
+    for(let i = otrosDisponibles.length - 1; i >= 0; i--){
+      if(otrosDisponibles[i].grupoIdx !== ganador.grupoIdx){
+        idxElegido = i;
+        break;
+      }
+    }
+    if(idxElegido === -1 && otrosDisponibles.length > 0){
+      idxElegido = otrosDisponibles.length - 1;
+    }
+
+    if(idxElegido !== -1){
+      const rival = otrosDisponibles.splice(idxElegido, 1)[0];
+      resultado.push(ganador.equipo, rival.equipo);
+    } else {
+      resultado.push(ganador.equipo);
+    }
+  });
+
+  while(otrosDisponibles.length > 0){
+    resultado.push(otrosDisponibles.shift().equipo);
+  }
+
+  return resultado;
+}
+
 function generarBracket(numPorGrupo = 2){
   const d = disciplinas[disciplinaActual];
   const clasificados = obtenerClasificados(numPorGrupo);
   const bracketPrevio = d.bracket;
 
-  const tamanoBracket = siguientePotenciaDeDos(clasificados.length);
-  const orden = ordenSiembra(tamanoBracket);
-
-  const porSiembra = {};
-  clasificados.forEach((c, idx) => { porSiembra[idx + 1] = c.equipo; });
-
-  const slots = orden.map(siembra => porSiembra[siembra] || 'BYE');
+  const nombresOrdenados = armarCrucesSinRepetirGrupo(clasificados);
+  const tamanoBracket = siguientePotenciaDeDos(nombresOrdenados.length);
+  while(nombresOrdenados.length < tamanoBracket){
+    nombresOrdenados.push('BYE');
+  }
+  const slots = nombresOrdenados;
 
   const ronda1 = [];
   for(let i = 0; i < slots.length; i += 2){
