@@ -134,6 +134,15 @@
       </div>
     </div>
     <p class="add-note">El sistema arma automáticamente todos los cruces posibles dentro de cada grupo (todos contra todos): 1vs2, 1vs3, 2vs3.</p>
+
+    <div class="card" id="card-calendario-futbol">
+      <b>Calendario del sábado — Fútbol Masculino + Femenino (4 canchas)</b>
+      <div class="btn-row" id="boton-generar-calendario-futbol">
+        <button class="btn oro" onclick="generarCalendarioFutbolSabado()">📅 Generar calendario del sábado</button>
+      </div>
+      <div id="calendario-futbol-sabado" style="margin-top:10px;overflow-x:auto;"></div>
+    </div>
+
     <div class="btn-row"><button class="btn" onclick="irAtras(2)">← Atrás</button><button class="btn oro" onclick="generarPartidos(); ir(3)">Ver partidos y tabla →</button></div>
   </section>
 

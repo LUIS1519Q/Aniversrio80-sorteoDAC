@@ -531,7 +531,8 @@ async function cargarEstado(){
             equipos: guardado.equipos || [],
             grupos: guardado.grupos || undefined,
             partidos: guardado.partidos || undefined,
-            bracket: guardado.bracket || undefined
+            bracket: guardado.bracket || undefined,
+            calendarioSabado: guardado.calendarioSabado || undefined
           };
         }
       });
@@ -591,7 +592,8 @@ function aplicarModoLectura(){
     'card-inscribir-pareja',
     'boton-generar-bracket-mundial',
     'boton-regenerar-bracket',
-    'card-num-grupos'
+    'card-num-grupos',
+    'boton-generar-calendario-futbol'
   ];
   idsAOcultar.forEach(id => {
     const el = document.getElementById(id);
@@ -782,9 +784,232 @@ function colocarEquipoEnGrupo(nombre, grupoIdx){
   seleccionarDisciplina(disciplinaActual, false);
 }
 
+function generarCalendarioFutbolSabado(){
+  const dH = disciplinas.hombres;
+  const dM = disciplinas.mujeres;
+
+  if(!dH.grupos || dH.grupos.length !== 2){
+    alert('Fútbol Masculino debe estar sorteado en exactamente 2 grupos (3 y 4 equipos) antes de generar el calendario.');
+    return;
+  }
+
+  const grupoChico = dH.grupos.find(g => g.length === 3);
+  const grupoGrande = dH.grupos.find(g => g.length === 4);
+
+  if(!grupoChico || !grupoGrande){
+    alert('Los grupos deben ser exactamente de 3 y 4 equipos.');
+    return;
+  }
+
+  // Round robin del grupo de 4 (metodo del circulo, sin bye, 3 rondas x 2 partidos)
+  const roundsGrande = rondasRoundRobin(grupoGrande);
+  // Round robin del grupo de 3 (con bye, 3 rondas x 1 partido real)
+  const roundsChico = rondasRoundRobin(grupoChico);
+
+  // Partidos de Futbol Femenino (round robin de 3, con bye)
+  const equiposFem = (dM.equipos || []).slice(0, 3);
+  const roundsFem = equiposFem.length === 3 ? rondasRoundRobin(equiposFem) : [[], [], []];
+
+  const DUR = 45;
+  const DESCANSO = 5;
+  const ORGANIZACION = 5;
+
+  const calendario = [];
+  let horaMin = horaATotalMinutos('11:00');
+
+  for(let i = 0; i < 3; i++){
+    const partidosRonda = [];
+    roundsGrande[i].forEach(p => partidosRonda.push({ tipo: 'M', local: p.local, visitante: p.visitante }));
+    roundsChico[i].forEach(p => partidosRonda.push({ tipo: 'M', local: p.local, visitante: p.visitante }));
+    if(roundsFem[i] && roundsFem[i].length) {
+      roundsFem[i].forEach(p => partidosRonda.push({ tipo: 'F', local: p.local, visitante: p.visitante }));
+    }
+
+    calendario.push({
+      filaTipo: 'juego',
+      horaIni: horaMin, horaFin: horaMin + DUR,
+      partidos: partidosRonda
+    });
+    horaMin += DUR;
+
+    if(i < 2){
+      calendario.push({ filaTipo: 'descanso', horaIni: horaMin, horaFin: horaMin + DESCANSO });
+      horaMin += DESCANSO;
+      calendario.push({ filaTipo: 'organizacion', horaIni: horaMin, horaFin: horaMin + ORGANIZACION });
+      horaMin += ORGANIZACION;
+    }
+  }
+
+  // Ronda 4: los cruces (1ro GrupoA vs 3ro GrupoB, 2do GrupoA vs 4to GrupoB) - se agregan como
+  // placeholders, se completan cuando la tabla este lista (Pieza 1b)
+  calendario.push({ filaTipo: 'descanso', horaIni: horaMin, horaFin: horaMin + DESCANSO });
+  horaMin += DESCANSO;
+  calendario.push({ filaTipo: 'organizacion', horaIni: horaMin, horaFin: horaMin + ORGANIZACION });
+  horaMin += ORGANIZACION;
+  calendario.push({
+    filaTipo: 'juego',
+    horaIni: horaMin, horaFin: horaMin + DUR,
+    partidos: [
+      { tipo: 'M', local: '1ro Grupo (3)', visitante: '3ro Grupo (4)', pendienteDeTabla: true },
+      { tipo: 'M', local: '2do Grupo (3)', visitante: '4to Grupo (4)', pendienteDeTabla: true }
+    ]
+  });
+
+  dH.calendarioSabado = calendario;
+  guardarEstado();
+  renderizarCalendarioFutbol();
+}
+
+function rondasRoundRobin(equipos){
+  const arr = equipos.slice();
+  if(arr.length % 2 !== 0) arr.push('BYE');
+  const n = arr.length;
+  const rondas = [];
+  for(let r = 0; r < n - 1; r++){
+    const partidos = [];
+    for(let i = 0; i < n / 2; i++){
+      const local = arr[i];
+      const visitante = arr[n - 1 - i];
+      if(local !== 'BYE' && visitante !== 'BYE'){
+        partidos.push({ local, visitante });
+      }
+    }
+    rondas.push(partidos);
+    const ultimo = arr[n - 1];
+    for(let i = n - 1; i > 1; i--){ arr[i] = arr[i - 1]; }
+    arr[1] = ultimo;
+  }
+  return rondas;
+}
+
+function horaATotalMinutos(hhmm){
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutosAHora(total){
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+function renderizarCalendarioFutbol(){
+  const cont = document.getElementById('calendario-futbol-sabado');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  const dH = disciplinas.hombres;
+  if(!dH.calendarioSabado){
+    cont.innerHTML = '<p class="add-note">Aún no se ha generado el calendario. Sortea Fútbol Masculino en 2 grupos (3 y 4 equipos) y da clic en "Generar calendario del sábado".</p>';
+    return;
+  }
+
+  const tabla = document.createElement('table');
+  let html = '<tr><th>Hora</th><th>Tipo</th><th>Cancha 1</th><th>Cancha 2</th><th>Cancha 3</th><th>Cancha 4</th></tr>';
+
+  dH.calendarioSabado.forEach(fila => {
+    const horaTexto = minutosAHora(fila.horaIni) + '-' + minutosAHora(fila.horaFin);
+    if(fila.filaTipo === 'descanso'){
+      html += '<tr style="background:rgba(232,184,75,.15);"><td>' + horaTexto + '</td><td>Descanso (5 min)</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    } else if(fila.filaTipo === 'organizacion'){
+      html += '<tr style="background:rgba(112,48,160,.15);"><td>' + horaTexto + '</td><td>Organización (5 min)</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    } else {
+      const celdas = ['', '', '', ''];
+      fila.partidos.forEach((p, idx) => {
+        let etiqueta = p.local + ' vs ' + p.visitante + ' (' + p.tipo + ')';
+        if(p.pendienteDeTabla) etiqueta += ' ⚠️ pendiente';
+        if(idx < 4) celdas[idx] = { texto: etiqueta, esCruce: !!p.esCruce, idx };
+      });
+      html += '<tr><td>' + horaTexto + '</td><td>Juego</td>' +
+        celdas.map(c => '<td>' + (c ? escapeCeldaHTML(c) : '') + '</td>').join('') +
+        '</tr>';
+    }
+  });
+
+  tabla.innerHTML = html;
+  cont.appendChild(tabla);
+
+  // Conectar los inputs de marcador de los cruces (si existen en esta tabla)
+  cont.querySelectorAll('.input-cruce').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const numPartido = Number(e.target.dataset.numpartido);
+      const campo = e.target.dataset.campo;
+      const valor = e.target.value === '' ? null : Number(e.target.value);
+      actualizarMarcadorCruce(numPartido, campo, valor);
+    });
+  });
+}
+
+function escapeCeldaHTML(c){
+  if(!c.esCruce) return c.texto;
+  const dH = disciplinas.hombres;
+  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  const p = ultimaRonda.partidos[c.idx];
+  const soloLectura = !esOrganizador();
+  return p.local + ' <input type="number" min="0" class="input-cruce" style="width:36px;" data-numpartido="' + c.idx + '" data-campo="golesLocal" value="' + (p.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> vs ' +
+    '<input type="number" min="0" class="input-cruce" style="width:36px;" data-numpartido="' + c.idx + '" data-campo="golesVisitante" value="' + (p.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> ' + p.visitante;
+}
+
+function calcularClasificadosFutbolMasculino(){
+  const dH = disciplinas.hombres;
+  if(!dH.grupos || dH.grupos.length !== 2 || !dH.partidos){
+    alert('Faltan datos: primero sortea 2 grupos (3 y 4 equipos) y genera/juega los partidos de grupo (pantalla "Ver partidos y tabla").');
+    return null;
+  }
+  const idxChico = dH.grupos.findIndex(g => g.length === 3);
+  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
+  if(idxChico === -1 || idxGrande === -1){
+    alert('Los grupos deben ser exactamente de 3 y 4 equipos.');
+    return null;
+  }
+  const tablaChico = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
+  const tablaGrande = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
+  return { idxChico, idxGrande, tablaChico, tablaGrande };
+}
+
+function generarCrucesFutbol(){
+  const datos = calcularClasificadosFutbolMasculino();
+  if(!datos) return;
+  const { tablaChico, tablaGrande } = datos;
+
+  if(tablaChico.some(e => e.pj < 2) || tablaGrande.some(e => e.pj < 3)){
+    alert('Todavía faltan partidos de la fase de grupos por jugar. Completa esos resultados antes de generar los cruces.');
+    return;
+  }
+
+  const primero1 = tablaChico[0].equipo;
+  const segundo1 = tablaChico[1].equipo;
+  const tercero2 = tablaGrande[2].equipo;
+  const cuarto2 = tablaGrande[3].equipo;
+
+  const dH = disciplinas.hombres;
+  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  ultimaRonda.partidos = [
+    { tipo: 'M', local: primero1, visitante: tercero2, golesLocal: null, golesVisitante: null, esCruce: true },
+    { tipo: 'M', local: segundo1, visitante: cuarto2, golesLocal: null, golesVisitante: null, esCruce: true }
+  ];
+
+  guardarEstado();
+  renderizarCalendarioFutbol();
+}
+
+function actualizarMarcadorCruce(numPartido, campo, valor){
+  const dH = disciplinas.hombres;
+  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  ultimaRonda.partidos[numPartido][campo] = valor;
+  guardarEstado();
+  renderizarCalendarioFutbol();
+}
+
 function renderizarGrupos(){
   const d = disciplinas[disciplinaActual];
   document.querySelector('#s2 h1').textContent = 'Grupos generados — ' + d.titulo;
+
+  const cardCalendario = document.getElementById('card-calendario-futbol');
+  if(cardCalendario){
+    const esFutbol = (disciplinaActual === 'hombres' || disciplinaActual === 'mujeres');
+    cardCalendario.style.display = esFutbol ? '' : 'none';
+  }
 
   const cont = document.querySelector('#s2 .grupos');
   cont.innerHTML = '';
@@ -1303,6 +1528,7 @@ function ir(i, btn){
   else{document.querySelectorAll('nav button')[i].classList.add('active');}
   if(i === 2){
     renderizarGrupos();
+    renderizarCalendarioFutbol();
   }
   if(i === 3){
     grupoTablaActual = 0;
