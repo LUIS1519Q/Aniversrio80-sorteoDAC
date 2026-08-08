@@ -25,11 +25,9 @@
     <button onclick="ir(6,this)">7. INSTITUCIONES</button>
   </nav>
   <button id="btn-modo-organizador" onclick="intentarModoOrganizador()" style="margin-left:10px;font-size:12px;padding:4px 10px;cursor:pointer;">🔑 Modo organizador</button>
-
 </div>
 
 <main>
-
   <!-- 0. INICIO -->
   <section class="screen active" id="s0">
     <h1>Seleccionar disciplina</h1>
@@ -74,42 +72,47 @@
       <label style="font-size:13px;">Nombre del equipo</label><br>
       <div class="btn-row">
         <input type="text" id="nuevo-equipo" placeholder="Ej: Torre de Control" style="flex:1;padding:8px;border:1px solid var(--linea);">
+        <select id="tipo-nuevo-equipo" style="display:none;padding:8px;">
+          <option value="hombres">Hombres</option>
+          <option value="mixto">Mixto</option>
+          <option value="mujeres">Mujeres</option>
+        </select>
         <button class="btn" onclick="agregarEquipo()">Agregar equipo</button>
       </div>
     </div>
 
-    <div class="sorteo-layout">
+    <div class="card" id="card-jugadores-mixtos" style="display:none;">
+      <b>Jugadores de equipos Mixtos (mínimo 2 mujeres por equipo)</b>
+      <div id="lista-jugadores-mixtos" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card" id="card-equipos-basquet" style="display:none;">
+      <b>Equipos registrados</b>
+      <div id="lista-equipos-basquet" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card" id="card-ronda1-basquet" style="display:none;">
+      <b>Generación de llaves — Básquet Mixto</b>
+      <p class="add-note">Se necesitan exactamente 3 Hombres, 4 Mixtos y 1 Mujeres con sus jugadores completos para proceder.</p>
+      <div class="btn-row" id="boton-generar-ronda1-basquet">
+        <button class="btn oro" onclick="generarRondaUnoBasquet()">🏀 Generar Ronda 1</button>
+      </div>
+    </div>
+
+    <div class="sorteo-layout" id="bloque-sorteo-grupos">
       <div class="lista-pendientes card">
         <b>Equipos por sortear</b>
-        <ul id="lista-equipos" class="pendientes-ul">
-          <li data-nombre="Torre de Control">Torre de Control</li>
-          <li data-nombre="Pista Norte">Pista Norte</li>
-          <li data-nombre="Radar 1">Radar 1</li>
-          <li data-nombre="Escuadrón Sur">Escuadrón Sur</li>
-          <li data-nombre="Los Pilotos">Los Pilotos</li>
-          <li data-nombre="Aeroclub">Aeroclub</li>
-          <li data-nombre="Turbina FC">Turbina FC</li>
-          <li data-nombre="Vuelo 502">Vuelo 502</li>
-        </ul>
+        <ul id="lista-equipos" class="pendientes-ul"></ul>
         <div class="btn-row" id="botones-sorteo">
-  <button class="btn oro" onclick="sortearUno()">🎲 Sortear siguiente</button>
-  <button class="btn" onclick="rehacerSorteo()" style="background:var(--rojo-tab);">🔄 Rehacer sorteo</button>
-</div>
+          <button class="btn oro" onclick="sortearUno()">🎲 Sortear siguiente</button>
+          <button class="btn" onclick="rehacerSorteo()" style="background:var(--rojo-tab);">🔄 Rehacer sorteo</button>
+        </div>
       </div>
 
       <div class="grupos-sorteo">
-        <div class="grupo-box">
-          <h3>GRUPO 1</h3>
-          <ul id="g1" class="grupo-ul"></ul>
-        </div>
-        <div class="grupo-box">
-          <h3>GRUPO 2</h3>
-          <ul id="g2" class="grupo-ul"></ul>
-        </div>
-        <div class="grupo-box">
-          <h3>GRUPO 3</h3>
-          <ul id="g3" class="grupo-ul"></ul>
-        </div>
+        <div class="grupo-box"><h3>GRUPO 1</h3><ul id="g1" class="grupo-ul"></ul></div>
+        <div class="grupo-box"><h3>GRUPO 2</h3><ul id="g2" class="grupo-ul"></ul></div>
+        <div class="grupo-box"><h3>GRUPO 3</h3><ul id="g3" class="grupo-ul"></ul></div>
       </div>
     </div>
 
@@ -118,78 +121,113 @@
 
   <!-- 2. GRUPOS -->
   <section class="screen" id="s2">
-    <h1>Grupos generados — Fútbol Hombres</h1>
-    <div class="grupos">
-      <div class="grupo-box">
-        <h3>GRUPO 1</h3>
-        <ul><li><b>1</b> Torre de Control</li><li><b>2</b> Radar 1</li><li><b>3</b> Aeroclub</li></ul>
+    <div id="contenedor-grupos-futbol">
+      <h1>Grupos generados — Fútbol Hombres</h1>
+      <div class="grupos">
+        <div class="grupo-box"><h3>GRUPO 1</h3><ul><li><b>1</b> Torre de Control</li></ul></div>
+        <div class="grupo-box"><h3>GRUPO 2</h3><ul><li><b>1</b> Pista Norte</li></ul></div>
       </div>
-      <div class="grupo-box">
-        <h3>GRUPO 2</h3>
-        <ul><li><b>1</b> Pista Norte</li><li><b>2</b> Los Pilotos</li><li><b>3</b> Turbina FC</li></ul>
+      <p class="add-note">El sistema arma automáticamente todos los cruces posibles dentro de cada grupo.</p>
+
+      <div class="card" id="card-calendario-futbol">
+        <b>Calendario del sábado — Fútbol Masculino + Femenino (4 canchas)</b>
+        <div class="btn-row" id="boton-generar-calendario-futbol">
+          <button class="btn oro" onclick="generarCalendarioFutbolSabado()">📅 Generar calendario del sábado</button>
+          <button class="btn" onclick="generarTerceraRondaGrupoA()" style="background:var(--azul-cielo);">🔀 Generar 3ra ronda de Grupo A</button>
+        </div>
+        <div id="calendario-futbol-sabado" style="margin-top:10px;overflow-x:auto;"></div>
       </div>
-      <div class="grupo-box">
-        <h3>GRUPO 3</h3>
-        <ul><li><b>1</b> Escuadrón Sur</li><li><b>2</b> Vuelo 502</li><li><b>3</b> + agregar</li></ul>
+
+      <div class="card" id="card-semifinal-futbol">
+        <b>Semifinal — Fútbol Masculino (domingo)</b>
+        <div class="btn-row" id="boton-generar-semifinal">
+          <button class="btn oro" onclick="generarSemifinalFutbol()">🏆 Generar Semifinal</button>
+        </div>
+        <div id="semifinal-futbol" style="margin-top:10px;overflow-x:auto;"></div>
+      </div>
+
+      <div class="card" id="card-final-futbol">
+        <b>Final y puestos — Fútbol Masculino (domingo)</b>
+        <div class="btn-row" id="boton-generar-final">
+          <button class="btn oro" onclick="generarFinalYPuestosFutbol()">🥇 Generar Final y puestos</button>
+        </div>
+        <div id="final-puestos-futbol" style="margin-top:10px;overflow-x:auto;"></div>
       </div>
     </div>
-    <p class="add-note">El sistema arma automáticamente todos los cruces posibles dentro de cada grupo (todos contra todos): 1vs2, 1vs3, 2vs3.</p>
 
-    <div class="card" id="card-calendario-futbol">
-      <b>Calendario del sábado — Fútbol Masculino + Femenino (4 canchas)</b>
-      <div class="btn-row" id="boton-generar-calendario-futbol">
-        <button class="btn oro" onclick="generarCalendarioFutbolSabado()">📅 Generar calendario del sábado</button>
-        <button class="btn" onclick="generarTerceraRondaGrupoA()" style="background:var(--azul-cielo);">🔀 Generar 3ra ronda de Grupo A</button>
+    <div id="contenedor-grupos-basquet" style="display:none;">
+      <h1>Grupos generados — Básquet Mixto</h1>
+      <p class="add-note">División por llaves para la Ronda 1 y su calendario unificado de 1 sola cancha.</p>
+      <div class="grupos" style="grid-template-columns: 1fr 1fr;">
+        <div class="grupo-box">
+          <h3>GRUPO 1</h3>
+          <ul id="basquet-g1"></ul>
+        </div>
+        <div class="grupo-box">
+          <h3>GRUPO 2</h3>
+          <ul id="basquet-g2"></ul>
+        </div>
       </div>
-      <div id="calendario-futbol-sabado" style="margin-top:10px;overflow-x:auto;"></div>
+      
+      <div class="card">
+        <b>Calendario — Básquet (1 cancha)</b>
+        <div id="calendario-basquet" style="margin-top:10px;overflow-x:auto;"></div>
+      </div>
     </div>
 
-    <div class="card" id="card-semifinal-futbol">
-      <b>Semifinal — Fútbol Masculino (domingo)</b>
-      <div class="btn-row" id="boton-generar-semifinal">
-        <button class="btn oro" onclick="generarSemifinalFutbol()">🏆 Generar Semifinal</button>
-      </div>
-      <div id="semifinal-futbol" style="margin-top:10px;overflow-x:auto;"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="irAtras(2)">← Atrás</button>
+      <button class="btn oro" onclick="if(disciplinaActual !== 'basquet') generarPartidos(); ir(3)">Ver partidos y tabla →</button>
     </div>
-
-    <div class="card" id="card-final-futbol">
-      <b>Final y puestos — Fútbol Masculino (domingo)</b>
-      <div class="btn-row" id="boton-generar-final">
-        <button class="btn oro" onclick="generarFinalYPuestosFutbol()">🥇 Generar Final y puestos</button>
-      </div>
-      <div id="final-puestos-futbol" style="margin-top:10px;overflow-x:auto;"></div>
-    </div>
-
-    <div class="btn-row"><button class="btn" onclick="irAtras(2)">← Atrás</button><button class="btn oro" onclick="generarPartidos(); ir(3)">Ver partidos y tabla →</button></div>
   </section>
 
   <!-- 3. TABLA -->
   <section class="screen" id="s3">
-    <h1>Partidos y tabla de posiciones — Grupo 1</h1>
+    <div id="contenedor-tabla-futbol">
+      <h1>Partidos y tabla de posiciones — Grupo 1</h1>
+      <div class="btn-row" id="selector-grupo-tabla" style="margin-bottom:14px;"></div>
 
-    <div class="btn-row" id="selector-grupo-tabla" style="margin-bottom:14px;"></div>
-
-    <div class="card">
-      <b>Partidos del grupo</b>
-      <table style="margin-top:8px;" id="partidos-grupo">
-        <!-- Las filas de partidos se generan dinámicamente con JS -->
-      </table>
-    </div>
-    <div class="card">
-      <b>Tabla de posiciones (auto-calculada)</b>
-      <table id="tabla-posiciones">
-        <!-- Las filas de la tabla se generan dinámicamente con JS -->
-      </table>
-    </div>
-    <div class="card" id="card-tercera-ronda-grupoA">
-      <b>3ra ronda de Grupo A (contra 2do/3ro/4to de Grupo B)</b>
-      <div class="btn-row" id="boton-generar-3ra-ronda">
-        <button class="btn" onclick="generarTerceraRondaGrupoA()" style="background:var(--azul-cielo);">🔀 Generar 3ra ronda de Grupo A</button>
+      <div class="card">
+        <b>Partidos del grupo</b>
+        <table style="margin-top:8px;" id="partidos-grupo"></table>
       </div>
-      <div id="tercera-ronda-grupoA" style="margin-top:10px;overflow-x:auto;"></div>
-      <div id="tabla-final-grupoA" style="margin-top:14px;overflow-x:auto;"></div>
-      <div id="candidatos-5to-puesto" style="margin-top:14px;overflow-x:auto;"></div>
+      <div class="card">
+        <b>Tabla de posiciones (auto-calculada)</b>
+        <table id="tabla-posiciones"></table>
+      </div>
+      <div class="card" id="card-tercera-ronda-grupoA">
+        <b>3ra ronda de Grupo A (contra 2do/3ro/4to de Grupo B)</b>
+        <div class="btn-row" id="boton-generar-3ra-ronda">
+          <button class="btn" onclick="generarTerceraRondaGrupoA()" style="background:var(--azul-cielo);">🔀 Generar 3ra ronda de Grupo A</button>
+        </div>
+        <div id="tercera-ronda-grupoA" style="margin-top:10px;overflow-x:auto;"></div>
+        <div id="tabla-final-grupoA" style="margin-top:14px;overflow-x:auto;"></div>
+        <div id="candidatos-5to-puesto" style="margin-top:14px;overflow-x:auto;"></div>
+      </div>
     </div>
+
+    <div id="contenedor-marcadores-basquet" style="display:none;">
+      <h1>Marcadores y Tablas — Básquet Mixto</h1>
+      <p class="add-note">Anota los marcadores. Al finalizar la Ronda 1, genera las Semifinales y Perdedores. Las tablas inferiores compararán automáticamente las diferencias de puntos.</p>
+      
+      <div class="card">
+        <b>Ronda 1</b>
+        <div id="marcadores-ronda1-basquet" style="margin-top:10px;overflow-x:auto;"></div>
+      </div>
+
+      <div class="card" id="card-fase2-basquet">
+        <b>Semifinales y Llave de Perdedores</b>
+        <div class="btn-row" id="btn-generar-fase2-basquet">
+          <button class="btn oro" onclick="generarFaseDosBasquet()">🏆 Generar Semis y Perdedores</button>
+        </div>
+        <div id="marcadores-fase2-basquet" style="margin-top:10px;overflow-x:auto;"></div>
+      </div>
+      
+      <div id="tablas-basquet" style="margin-top:20px;">
+        <!-- Tablas 3er/4to y 5to lugar inyectadas por JS -->
+      </div>
+    </div>
+
     <div class="btn-row">
       <button class="btn" onclick="irAtras(3)">← Atrás</button>
       <button class="btn oro" onclick="ir(4)">Ir a eliminación directa →</button>
@@ -198,14 +236,21 @@
 
   <!-- 4. ELIMINACION -->
   <section class="screen" id="s4">
-    <h1>Eliminación directa — Fútbol Hombres</h1>
-    <p class="add-note">Clasifican los 2 mejores de cada grupo. Si el número no arma un bracket parejo, los mejores puntajes generales avanzan directo con "bye". Coloca el marcador de cada equipo y el ganador pasa a la siguiente ronda automaticamente.</p>
-    <div class="btn-row" id="boton-regenerar-bracket">
-      <button class="btn" onclick="generarBracket(2); renderizarBracket();" style="background:var(--rojo-tab);">🔄 Regenerar bracket</button>
+    <div id="contenedor-eliminacion-futbol">
+      <h1>Eliminación directa — Fútbol Hombres</h1>
+      <p class="add-note">Clasifican los 2 mejores de cada grupo. Bracket automático.</p>
+      <div class="btn-row" id="boton-regenerar-bracket">
+        <button class="btn" onclick="generarBracket(2); renderizarBracket();" style="background:var(--rojo-tab);">🔄 Regenerar bracket</button>
+      </div>
+      <div class="bracket" id="bracket-eliminacion"></div>
     </div>
-    <div class="bracket" id="bracket-eliminacion">
-      <!-- El bracket se genera dinámicamente con JS -->
+
+    <div id="contenedor-eliminacion-basquet" style="display:none;">
+      <h1>Eliminación directa (Final) — Básquet Mixto</h1>
+      <p class="add-note">Calcula la Final y los puestos 3, 4 y 5 basándose en las tablas comparativas de la pantalla anterior.</p>
+      <div class="card" id="final-basquet-contenedor"></div>
     </div>
+
     <div class="btn-row">
       <button class="btn" onclick="irAtras(4)">← Atrás</button>
     </div>
@@ -221,7 +266,6 @@
         <input type="text" id="mundial-jugador2" placeholder="Jugador 2" style="padding:8px;border:1px solid var(--linea);">
         <button class="btn" onclick="inscribirPareja()">Inscribir pareja</button>
       </div>
-      <p class="add-note">No hay fase de grupos: cada pareja inscrita entra directo al bracket. Con número impar se asigna 1 bye al azar. Se puede seguir inscribiendo aunque el bracket ya esté generado — se regenera automáticamente.</p>
     </div>
 
     <div class="card">
@@ -229,13 +273,11 @@
       <div id="lista-parejas-mundial" style="margin-top:8px;"></div>
     </div>
 
-<div class="btn-row" id="boton-generar-bracket-mundial">
-  <button class="btn oro" onclick="generarBracketMundial(); renderizarBracketMundial();">🎲 Generar / actualizar bracket</button>
-  <button class="btn" onclick="rehacerSorteoMundial()" style="background:var(--rojo-tab);">🔄 Rehacer sorteo</button>
-</div>
-    <div class="bracket" id="bracket-mundial40" style="margin-top:16px;">
-      <!-- El bracket se genera dinámicamente con JS -->
+    <div class="btn-row" id="boton-generar-bracket-mundial">
+      <button class="btn oro" onclick="generarBracketMundial(); renderizarBracketMundial();">🎲 Generar / actualizar bracket</button>
+      <button class="btn" onclick="rehacerSorteoMundial()" style="background:var(--rojo-tab);">🔄 Rehacer sorteo</button>
     </div>
+    <div class="bracket" id="bracket-mundial40" style="margin-top:16px;"></div>
 
     <div class="btn-row">
       <button class="btn" onclick="irAtras(5)">← Atrás</button>
@@ -245,7 +287,7 @@
   <!-- 6. INSTITUCIONES -->
   <section class="screen" id="s6">
     <h1>Instituciones y disciplinas</h1>
-    <p class="add-note">Marca en qué disciplinas participa cada institución. Esto ayuda a detectar cruces de horario entre disciplinas.</p>
+    <p class="add-note">Marca en qué disciplinas participa cada institución.</p>
     <div class="card" id="card-agregar-institucion">
       <label style="font-size:13px;">Nombre de la institución</label><br>
       <div class="btn-row">
@@ -280,7 +322,6 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // Dejamos estas funciones disponibles globalmente para que script.js las use
   window.firebaseDB = db;
   window.firebaseRef = ref;
   window.firebaseSet = set;
