@@ -27,6 +27,12 @@ let mundial40 = {
   bracket: null
 };
 
+let jenga = {
+  participantes: [],
+  bracket: null,
+  numMazos: 5
+};
+
 let instituciones = {};
 
 const disciplinasParaCheckbox = [
@@ -124,15 +130,13 @@ function nombrePareja(pareja){
 function inscribirPareja(){
   const input1 = document.getElementById('mundial-jugador1');
   const input2 = document.getElementById('mundial-jugador2');
+  const inputInst = document.getElementById('mundial-institucion');
   const j1 = input1.value.trim();
   const j2 = input2.value.trim();
 
-  if(!j1 || !j2){
-    alert('Debes ingresar el nombre de ambos jugadores.');
-    return;
-  }
+  if(!j1 || !j2){ alert('Debes ingresar el nombre de ambos jugadores.'); return; }
 
-  const nueva = { id: Date.now(), jugador1: j1, jugador2: j2 };
+  const nueva = { id: Date.now(), jugador1: j1, jugador2: j2, institucion: inputInst ? inputInst.value.trim() : '' };
   mundial40.parejas.push(nueva);
 
   if(mundial40.bracket) generarBracketMundial();
@@ -140,8 +144,8 @@ function inscribirPareja(){
   renderizarListaParejas();
   if(mundial40.bracket) renderizarBracketMundial();
 
-  input1.value = '';
-  input2.value = '';
+  input1.value = ''; input2.value = '';
+  if(inputInst) inputInst.value = '';
 }
 
 function parejaYaJugo(nombrePar){
@@ -289,7 +293,7 @@ function renderizarListaParejas(){
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--linea);';
     const span = document.createElement('span');
-    span.textContent = nombrePareja(pareja);
+    span.textContent = nombrePareja(pareja) + (pareja.institucion ? ' — ' + pareja.institucion : '');
     div.appendChild(span);
 
     if(!parejaYaJugo(nombrePareja(pareja)) && esOrganizador()){
@@ -421,7 +425,7 @@ function limpiarUndefined(valor){
 }
 
 function guardarEstado(){
-  const paqueteOriginal = { disciplinas: disciplinas, mundial40: mundial40, instituciones: instituciones };
+  const paqueteOriginal = { disciplinas: disciplinas, mundial40: mundial40, instituciones: instituciones, jenga: jenga };
   const paquete = limpiarUndefined(paqueteOriginal);
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'estado'), paquete)
     .then(() => guardarHistorial(paquete))
@@ -488,6 +492,7 @@ async function cargarEstado(){
 
     if(datosGuardados.mundial40) mundial40 = datosGuardados.mundial40;
     if(datosGuardados.instituciones) instituciones = datosGuardados.instituciones;
+    if(datosGuardados.jenga) jenga = datosGuardados.jenga;
 
     return true;
   } catch (error) {
@@ -524,7 +529,8 @@ function aplicarModoLectura(){
     'boton-generar-bracket-mundial', 'boton-regenerar-bracket', 'card-num-grupos',
     'boton-generar-calendario-futbol', 'boton-generar-semifinal', 'boton-generar-final',
     'boton-generar-3ra-ronda', 'boton-generar-ronda1-basquet', 'btn-generar-fase2-basquet',
-    'boton-generar-calendario-voley', 'boton-generar-semifinal-voley', 'boton-generar-final-voley'
+    'boton-generar-calendario-voley', 'boton-generar-semifinal-voley', 'boton-generar-final-voley',
+    'card-inscribir-jenga', 'boton-generar-bracket-jenga'
   ];
   idsAOcultar.forEach(id => {
     const el = document.getElementById(id);
@@ -2129,6 +2135,8 @@ function ir(i, btn){
   if(i === 5){
     renderizarListaParejas();
     if(mundial40.bracket) renderizarBracketMundial();
+    renderizarListaJenga();
+    if(jenga.bracket) renderizarBracketJenga();
   }
   if(i === 6){ renderizarInstituciones(); }
 }
@@ -2148,6 +2156,183 @@ async function iniciarApp(){
   ir(0);
 }
 
+// ---- JENGA ----
+function cambiarTabMundial(tab){
+  document.getElementById('bloque-mundial').style.display = tab === 'mundial' ? '' : 'none';
+  document.getElementById('bloque-jenga').style.display = tab === 'jenga' ? '' : 'none';
+  document.getElementById('tab-mundial').className = 'btn' + (tab === 'mundial' ? ' oro' : '');
+  document.getElementById('tab-jenga').className = 'btn' + (tab === 'jenga' ? ' oro' : '');
+}
+
+function actualizarMazosJenga(val){
+  jenga.numMazos = Number(val) || 5;
+  guardarEstado();
+}
+
+function inscribirJenga(){
+  const input1 = document.getElementById('jenga-jugador1');
+  const inputInst = document.getElementById('jenga-institucion');
+  const nombre = input1.value.trim();
+  if(!nombre){ alert('Ingresa el nombre del participante/pareja.'); return; }
+
+  jenga.participantes.push({ id: Date.now(), nombre, institucion: inputInst ? inputInst.value.trim() : '' });
+  if(jenga.bracket) generarBracketJenga();
+  guardarEstado();
+  renderizarListaJenga();
+  if(jenga.bracket) renderizarBracketJenga();
+  input1.value = '';
+  if(inputInst) inputInst.value = '';
+}
+
+function eliminarJengaParticipante(id){
+  if(!confirm('¿Eliminar participante?')) return;
+  jenga.participantes = jenga.participantes.filter(p => p.id !== id);
+  if(jenga.bracket) generarBracketJenga();
+  guardarEstado();
+  renderizarListaJenga();
+  if(jenga.bracket) renderizarBracketJenga();
+}
+
+function renderizarListaJenga(){
+  const cont = document.getElementById('lista-jenga');
+  if(!cont) return;
+  if(jenga.participantes.length === 0){ cont.innerHTML = '<p class="add-note">Aún no hay participantes.</p>'; return; }
+  cont.innerHTML = '';
+  jenga.participantes.forEach(p => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--linea);';
+    div.innerHTML = '<span>' + p.nombre + (p.institucion ? ' — ' + p.institucion : '') + '</span>';
+    if(esOrganizador()){
+      const btn = document.createElement('button');
+      btn.textContent = '🗑️';
+      btn.onclick = () => eliminarJengaParticipante(p.id);
+      div.appendChild(btn);
+    }
+    cont.appendChild(div);
+  });
+  const inputMazos = document.getElementById('jenga-num-mazos');
+  if(inputMazos) inputMazos.value = jenga.numMazos || 5;
+}
+
+function generarBracketJenga(){
+  if(jenga.participantes.length < 2){ jenga.bracket = null; return; }
+  const bracketPrevio = jenga.bracket;
+  const nombres = mezclarAlAzar(jenga.participantes.map(p => p.nombre));
+  const tamano = siguientePotenciaDeDos(nombres.length);
+  const orden = ordenSiembra(tamano);
+  const porSiembra = {};
+  nombres.forEach((n, i) => { porSiembra[i + 1] = n; });
+  const slots = orden.map(s => porSiembra[s] || 'BYE');
+
+  const ronda1 = [];
+  for(let i = 0; i < slots.length; i += 2){
+    const local = slots[i], visitante = slots[i + 1];
+    let ganador = null;
+    if(local === 'BYE') ganador = visitante;
+    else if(visitante === 'BYE') ganador = local;
+    if(bracketPrevio && bracketPrevio[0]){
+      const previo = bracketPrevio[0].find(p => (p.local === local && p.visitante === visitante) || (p.local === visitante && p.visitante === local));
+      if(previo && previo.ganador) ganador = previo.ganador;
+    }
+    ronda1.push({ local, visitante, ganador });
+  }
+
+  const rondas = [ronda1];
+  while(rondas[rondas.length - 1].length > 1){
+    const anterior = rondas[rondas.length - 1];
+    const siguiente = [];
+    for(let i = 0; i < anterior.length; i += 2){
+      siguiente.push({ local: anterior[i].ganador || 'Por definir', visitante: anterior[i+1].ganador || 'Por definir', ganador: null });
+    }
+    rondas.push(siguiente);
+  }
+  jenga.bracket = rondas;
+  guardarEstado();
+}
+
+function rehacerSorteoJenga(){
+  if(!jenga.bracket) return;
+  if(!confirm('¿Rehacer el sorteo de Jenga?')) return;
+  jenga.bracket = null;
+  guardarEstado();
+  renderizarBracketJenga();
+}
+
+function seleccionarGanadorJenga(numRonda, numPartido, ganador){
+  jenga.bracket[numRonda][numPartido].ganador = ganador;
+  propagarDesdeJenga(numRonda);
+  guardarEstado();
+  renderizarBracketJenga();
+}
+
+function deshacerGanadorJenga(numRonda, numPartido){
+  if(!confirm('¿Deshacer este resultado?')) return;
+  jenga.bracket[numRonda][numPartido].ganador = null;
+  propagarDesdeJenga(numRonda);
+  guardarEstado();
+  renderizarBracketJenga();
+}
+
+function propagarDesdeJenga(numRonda){
+  for(let r = numRonda + 1; r < jenga.bracket.length; r++){
+    const anterior = jenga.bracket[r - 1];
+    const actual = jenga.bracket[r];
+    for(let i = 0; i < actual.length; i++){
+      actual[i].local = anterior[i*2].ganador || 'Por definir';
+      actual[i].visitante = anterior[i*2+1].ganador || 'Por definir';
+      actual[i].ganador = null;
+    }
+  }
+}
+
+function renderizarBracketJenga(){
+  const cont = document.getElementById('bracket-jenga');
+  if(!cont) return;
+  cont.innerHTML = '';
+  if(!jenga.bracket){ cont.innerHTML = '<p class="add-note">Inscribe al menos 2 participantes para generar el bracket.</p>'; return; }
+
+  const tamanoInicial = jenga.bracket[0].length * 2;
+  const etiquetas = nombresRondaMundial[tamanoInicial] || jenga.bracket.map((_, i) => 'Ronda ' + (i+1));
+
+  jenga.bracket.forEach((ronda, numRonda) => {
+    const rondaDiv = document.createElement('div'); rondaDiv.className = 'ronda';
+    const label = document.createElement('div'); label.className = 'ronda-label';
+    label.textContent = etiquetas[numRonda] || ('Ronda ' + (numRonda+1));
+    rondaDiv.appendChild(label);
+
+    ronda.forEach((partido, numPartido) => {
+      const matchDiv = document.createElement('div'); matchDiv.className = 'match';
+      const esFinal = ronda.length === 1 && partido.ganador;
+      const esBye = partido.local === 'BYE' || partido.visitante === 'BYE';
+
+      ['local','visitante'].forEach(lado => {
+        const nombre = partido[lado];
+        const div = document.createElement('div');
+        const esGanador = partido.ganador && partido.ganador === nombre;
+        div.className = esGanador ? 'win' : '';
+        div.textContent = nombre;
+        const jugable = nombre && nombre !== 'BYE' && nombre !== 'Por definir' && !esBye && partido.local !== 'Por definir' && partido.visitante !== 'Por definir';
+        if(jugable && !partido.ganador && esOrganizador()){
+          div.style.cursor = 'pointer';
+          div.onclick = () => seleccionarGanadorJenga(numRonda, numPartido, nombre);
+        } else if(partido.ganador && !esBye && esOrganizador()){
+          div.style.cursor = 'pointer';
+          div.onclick = () => deshacerGanadorJenga(numRonda, numPartido);
+        }
+        matchDiv.appendChild(div);
+      });
+      rondaDiv.appendChild(matchDiv);
+
+      if(esFinal){
+        const campeonDiv = document.createElement('div'); campeonDiv.className = 'ronda';
+        campeonDiv.innerHTML = '<div class="ronda-label">Campeón</div><div class="match" style="border:2px solid var(--oro);"><div class="win">🏆 ' + partido.ganador + '</div></div>';
+        cont.appendChild(rondaDiv); cont.appendChild(campeonDiv); return;
+      }
+    });
+    if(!(ronda.length === 1 && ronda[0].ganador)) cont.appendChild(rondaDiv);
+  });
+}
+
 // Global functions for events
 window.cambiarTipoEquipoBasquet = cambiarTipoEquipoBasquet;
 window.eliminarEquipoBasquet = eliminarEquipoBasquet;
@@ -2164,5 +2349,10 @@ window.generarSemifinalVoley = generarSemifinalVoley;
 window.actualizarMarcadorSemiVoley = actualizarMarcadorSemiVoley;
 window.generarFinalVoley = generarFinalVoley;
 window.actualizarMarcadorFinalVoley = actualizarMarcadorFinalVoley;
+window.cambiarTabMundial = cambiarTabMundial;
+window.actualizarMazosJenga = actualizarMazosJenga;
+window.inscribirJenga = inscribirJenga;
+window.generarBracketJenga = generarBracketJenga;
+window.rehacerSorteoJenga = rehacerSorteoJenga;
 
 iniciarApp();

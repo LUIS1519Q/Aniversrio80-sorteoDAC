@@ -21,7 +21,7 @@
     <button onclick="ir(2,this)">3. GRUPOS</button>
     <button onclick="ir(3,this)">4. TABLA POSICIONES</button>
     <button onclick="ir(4,this)">5. ELIMINACIÓN DIRECTA</button>
-    <button onclick="ir(5,this)">6. MUNDIAL DE 40</button>
+    <button onclick="ir(5,this)">6. MUNDIAL DE 40 Y JENGA</button>
     <button onclick="ir(6,this)">7. INSTITUCIONES</button>
   </nav>
   <button id="btn-modo-organizador" onclick="intentarModoOrganizador()" style="margin-left:10px;font-size:12px;padding:4px 10px;cursor:pointer;">🔑 Modo organizador</button>
@@ -294,33 +294,68 @@
     </div>
   </section>
 
-  <!-- 5. MUNDIAL 40 -->
-  <section class="screen" id="s5">
-    <h1>Mundial de 40 — Bracket eliminación directa</h1>
+<!-- 5. MUNDIAL 40 -->
+<section class="screen" id="s5">
+  <h1>Mundial de 40 y Jenga</h1>
+
+  <!-- Tabs -->
+  <div class="btn-row" style="margin-bottom:14px;">
+    <button class="btn oro" id="tab-mundial" onclick="cambiarTabMundial('mundial')">🃏 Mundial de 40</button>
+    <button class="btn" id="tab-jenga" onclick="cambiarTabMundial('jenga')">🪵 Jenga</button>
+  </div>
+
+  <!-- MUNDIAL DE 40 -->
+  <div id="bloque-mundial">
     <div class="card" id="card-inscribir-pareja">
       <b>Inscripción de parejas</b>
       <div class="btn-row">
         <input type="text" id="mundial-jugador1" placeholder="Jugador 1" style="padding:8px;border:1px solid var(--linea);">
         <input type="text" id="mundial-jugador2" placeholder="Jugador 2" style="padding:8px;border:1px solid var(--linea);">
+        <input type="text" id="mundial-institucion" placeholder="Institución (opcional)" style="padding:8px;border:1px solid var(--linea);">
         <button class="btn" onclick="inscribirPareja()">Inscribir pareja</button>
       </div>
     </div>
-
     <div class="card">
       <b>Parejas inscritas</b>
       <div id="lista-parejas-mundial" style="margin-top:8px;"></div>
     </div>
-
     <div class="btn-row" id="boton-generar-bracket-mundial">
       <button class="btn oro" onclick="generarBracketMundial(); renderizarBracketMundial();">🎲 Generar / actualizar bracket</button>
       <button class="btn" onclick="rehacerSorteoMundial()" style="background:var(--rojo-tab);">🔄 Rehacer sorteo</button>
     </div>
     <div class="bracket" id="bracket-mundial40" style="margin-top:16px;"></div>
+  </div>
 
-    <div class="btn-row">
-      <button class="btn" onclick="irAtras(5)">← Atrás</button>
+  <!-- JENGA -->
+  <div id="bloque-jenga" style="display:none;">
+    <div class="card" id="card-inscribir-jenga">
+      <b>Configuración de Jenga</b>
+      <div class="btn-row" style="margin-bottom:8px;">
+        <label style="font-size:13px;">Número de mazos/torres:</label>
+        <input type="number" id="jenga-num-mazos" min="1" max="20" value="5" style="width:60px;padding:6px;border:1px solid var(--linea);" onchange="actualizarMazosJenga(this.value)">
+      </div>
+      <b>Inscripción de participantes</b>
+      <div class="btn-row">
+        <input type="text" id="jenga-jugador1" placeholder="Jugador / Pareja" style="padding:8px;border:1px solid var(--linea);flex:1;">
+        <input type="text" id="jenga-institucion" placeholder="Institución (opcional)" style="padding:8px;border:1px solid var(--linea);">
+        <button class="btn" onclick="inscribirJenga()">Inscribir</button>
+      </div>
     </div>
-  </section>
+    <div class="card">
+      <b>Participantes inscritos</b>
+      <div id="lista-jenga" style="margin-top:8px;"></div>
+    </div>
+    <div class="btn-row" id="boton-generar-bracket-jenga">
+      <button class="btn oro" onclick="generarBracketJenga(); renderizarBracketJenga();">🎲 Generar / actualizar bracket</button>
+      <button class="btn" onclick="rehacerSorteoJenga()" style="background:var(--rojo-tab);">🔄 Rehacer sorteo</button>
+    </div>
+    <div class="bracket" id="bracket-jenga" style="margin-top:16px;"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="irAtras(5)">← Atrás</button>
+  </div>
+</section>
 
   <!-- 6. INSTITUCIONES -->
   <section class="screen" id="s6">
