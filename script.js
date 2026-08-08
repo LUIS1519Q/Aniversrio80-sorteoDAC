@@ -594,7 +594,9 @@ function aplicarModoLectura(){
     'boton-regenerar-bracket',
     'card-num-grupos',
     'boton-generar-calendario-futbol',
-    'boton-generar-semifinal'
+    'boton-generar-semifinal',
+    'boton-generar-final',
+    'boton-generar-3ra-ronda'
   ];
   idsAOcultar.forEach(id => {
     const el = document.getElementById(id);
@@ -841,8 +843,8 @@ function generarCalendarioFutbolSabado(){
     }
   }
 
-  // Ronda 4: los cruces (1ro GrupoA vs 3ro GrupoB, 2do GrupoA vs 4to GrupoB) - se agregan como
-  // placeholders, se completan cuando la tabla este lista (Pieza 1b)
+  // Ronda 4: el 3er partido de los 3 equipos de Grupo A, contra 2do/3ro/4to de Grupo B
+  // (por posicion previa). Se completa con nombres reales en generarTerceraRondaGrupoA().
   calendario.push({ filaTipo: 'descanso', horaIni: horaMin, horaFin: horaMin + DESCANSO });
   horaMin += DESCANSO;
   calendario.push({ filaTipo: 'organizacion', horaIni: horaMin, horaFin: horaMin + ORGANIZACION });
@@ -851,8 +853,9 @@ function generarCalendarioFutbolSabado(){
     filaTipo: 'juego',
     horaIni: horaMin, horaFin: horaMin + DUR,
     partidos: [
-      { tipo: 'M', local: '1ro Grupo (3)', visitante: '3ro Grupo (4)', pendienteDeTabla: true },
-      { tipo: 'M', local: '2do Grupo (3)', visitante: '4to Grupo (4)', pendienteDeTabla: true }
+      { tipo: 'M', local: '1ro Grupo (3)', visitante: '2do Grupo (4)', pendienteDeTabla: true },
+      { tipo: 'M', local: '2do Grupo (3)', visitante: '3ro Grupo (4)', pendienteDeTabla: true },
+      { tipo: 'M', local: '3ro Grupo (3)', visitante: '4to Grupo (4)', pendienteDeTabla: true }
     ]
   });
 
@@ -919,90 +922,190 @@ function renderizarCalendarioFutbol(){
       fila.partidos.forEach((p, idx) => {
         let etiqueta = p.local + ' vs ' + p.visitante + ' (' + p.tipo + ')';
         if(p.pendienteDeTabla) etiqueta += ' ⚠️ pendiente';
-        if(idx < 4) celdas[idx] = { texto: etiqueta, esCruce: !!p.esCruce, idx };
+        if(p.esCruce){
+          const marcador = (typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number')
+            ? ' (' + p.golesLocal + '-' + p.golesVisitante + ')'
+            : ' (por jugar — ver abajo "3ra ronda de Grupo A")';
+          etiqueta += marcador;
+        }
+        if(idx < 4) celdas[idx] = etiqueta;
       });
-      html += '<tr><td>' + horaTexto + '</td><td>Juego</td>' +
-        celdas.map(c => '<td>' + (c ? escapeCeldaHTML(c) : '') + '</td>').join('') +
-        '</tr>';
+      html += '<tr><td>' + horaTexto + '</td><td>Juego</td><td>' + celdas[0] + '</td><td>' + celdas[1] + '</td><td>' + celdas[2] + '</td><td>' + celdas[3] + '</td></tr>';
     }
   });
 
   tabla.innerHTML = html;
   cont.appendChild(tabla);
-
-  // Conectar los inputs de marcador de los cruces (si existen en esta tabla)
-  cont.querySelectorAll('.input-cruce').forEach(input => {
-    input.addEventListener('change', (e) => {
-      const numPartido = Number(e.target.dataset.numpartido);
-      const campo = e.target.dataset.campo;
-      const valor = e.target.value === '' ? null : Number(e.target.value);
-      actualizarMarcadorCruce(numPartido, campo, valor);
-    });
-  });
 }
 
-function escapeCeldaHTML(c){
-  if(!c.esCruce) return c.texto;
-  const dH = disciplinas.hombres;
-  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  const p = ultimaRonda.partidos[c.idx];
-  const soloLectura = !esOrganizador();
-  return p.local + ' <input type="number" min="0" class="input-cruce" style="width:36px;" data-numpartido="' + c.idx + '" data-campo="golesLocal" value="' + (p.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> vs ' +
-    '<input type="number" min="0" class="input-cruce" style="width:36px;" data-numpartido="' + c.idx + '" data-campo="golesVisitante" value="' + (p.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> ' + p.visitante;
-}
+// --- Tercera ronda de Grupo A (los 3 equipos, contra 2do/3ro/4to de Grupo B) ---
 
-function calcularClasificadosFutbolMasculino(){
+function generarTerceraRondaGrupoA(){
   const dH = disciplinas.hombres;
-  if(!dH.grupos || dH.grupos.length !== 2 || !dH.partidos){
-    alert('Faltan datos: primero sortea 2 grupos (3 y 4 equipos) y genera/juega los partidos de grupo (pantalla "Ver partidos y tabla").');
-    return null;
+  if(!dH.grupos || !dH.partidos){
+    alert('Primero completa el sorteo y la fase de grupos (Ver partidos y tabla) de las 2 disciplinas.');
+    return;
   }
+
   const idxChico = dH.grupos.findIndex(g => g.length === 3);
   const idxGrande = dH.grupos.findIndex(g => g.length === 4);
   if(idxChico === -1 || idxGrande === -1){
     alert('Los grupos deben ser exactamente de 3 y 4 equipos.');
-    return null;
-  }
-  const tablaChico = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
-  const tablaGrande = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
-  return { idxChico, idxGrande, tablaChico, tablaGrande };
-}
-
-function generarCrucesFutbol(){
-  const datos = calcularClasificadosFutbolMasculino();
-  if(!datos) return;
-  const { tablaChico, tablaGrande } = datos;
-
-  if(tablaChico.some(e => e.pj < 2) || tablaGrande.some(e => e.pj < 3)){
-    alert('Todavía faltan partidos de la fase de grupos por jugar. Completa esos resultados antes de generar los cruces.');
     return;
   }
 
-  const primero1 = tablaChico[0].equipo;
-  const segundo1 = tablaChico[1].equipo;
-  const tercero2 = tablaGrande[2].equipo;
-  const cuarto2 = tablaGrande[3].equipo;
+  const tablaChico = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
+  const tablaGrande = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
 
-  const dH = disciplinas.hombres;
-  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  if(tablaChico.some(e => e.pj < 2) || tablaGrande.some(e => e.pj < 3)){
+    alert('Todavía faltan partidos de la fase de grupos por jugar. Completa esos resultados antes de generar la 3ra ronda.');
+    return;
+  }
+
+  const dH2 = disciplinas.hombres;
+  const ultimaRonda = dH2.calendarioSabado[dH2.calendarioSabado.length - 1];
   ultimaRonda.partidos = [
-    { tipo: 'M', local: primero1, visitante: tercero2, golesLocal: null, golesVisitante: null, esCruce: true },
-    { tipo: 'M', local: segundo1, visitante: cuarto2, golesLocal: null, golesVisitante: null, esCruce: true }
+    { tipo: 'M', local: tablaChico[0].equipo, visitante: tablaGrande[1].equipo, golesLocal: null, golesVisitante: null, esCruce: true },
+    { tipo: 'M', local: tablaChico[1].equipo, visitante: tablaGrande[2].equipo, golesLocal: null, golesVisitante: null, esCruce: true },
+    { tipo: 'M', local: tablaChico[2].equipo, visitante: tablaGrande[3].equipo, golesLocal: null, golesVisitante: null, esCruce: true }
   ];
 
   guardarEstado();
   renderizarCalendarioFutbol();
+  renderizarTerceraRondaGrupoA();
 }
 
-function actualizarMarcadorCruce(numPartido, campo, valor){
+function actualizarMarcadorTerceraRonda(numPartido, campo, valor){
   const dH = disciplinas.hombres;
   const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
   ultimaRonda.partidos[numPartido][campo] = valor;
   guardarEstado();
+  renderizarTerceraRondaGrupoA();
   renderizarCalendarioFutbol();
 }
 
-function calcularTablaExtendidaChico(){
+function renderizarTerceraRondaGrupoA(){
+  const cont = document.getElementById('tercera-ronda-grupoA');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  const dH = disciplinas.hombres;
+  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  const tienePartidos = ultimaRonda && ultimaRonda.partidos && ultimaRonda.partidos.length === 3 && ultimaRonda.partidos[0].esCruce;
+
+  if(!tienePartidos){
+    cont.innerHTML = '<p class="add-note">Aún no se ha generado la 3ra ronda. Completa la fase de grupos y da clic en "Generar 3ra ronda de Grupo A".</p>';
+    return;
+  }
+
+  const soloLectura = !esOrganizador();
+  let html = '<table><tr><th>Partido</th><th>Grupo A</th><th>Marcador</th><th>Grupo B</th></tr>';
+  ultimaRonda.partidos.forEach((p, idx) => {
+    html += '<tr><td>3ra ronda ' + (idx + 1) + '</td><td>' + p.local + '</td>' +
+      '<td><input type="number" min="0" class="input-3ra" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesLocal" value="' + (p.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> - ' +
+      '<input type="number" min="0" class="input-3ra" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesVisitante" value="' + (p.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '></td>' +
+      '<td>' + p.visitante + '</td></tr>';
+  });
+  html += '</table>';
+  cont.innerHTML = html;
+
+  cont.querySelectorAll('.input-3ra').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const numPartido = Number(e.target.dataset.numpartido);
+      const campo = e.target.dataset.campo;
+      const valor = e.target.value === '' ? null : Number(e.target.value);
+      actualizarMarcadorTerceraRonda(numPartido, campo, valor);
+    });
+  });
+
+  renderizarTablaFinalGrupoA();
+  renderizarCandidatos5to();
+}
+
+function renderizarTablaFinalGrupoA(){
+  const cont = document.getElementById('tabla-final-grupoA');
+  if(!cont) return;
+
+  const dH = disciplinas.hombres;
+  if(!dH.grupos || dH.grupos.findIndex(g => g.length === 3) === -1){
+    cont.innerHTML = '';
+    return;
+  }
+
+  const tabla = calcularTablaFinalGrupoA();
+  let html = '<b>Tabla final de Grupo A (2 partidos internos + 3ra ronda)</b>';
+  html += '<table><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>';
+  tabla.forEach((e, pos) => {
+    html += '<tr' + (pos < 2 ? ' class="top3"' : '') + '>' +
+      '<td>' + (pos + 1) + '</td><td>' + e.equipo + '</td><td>' + e.pj + '</td><td>' + e.pg + '</td>' +
+      '<td>' + e.pe + '</td><td>' + e.pp + '</td><td>' + (e.dif > 0 ? '+' : '') + e.dif + '</td><td>' + e.pts + '</td></tr>';
+  });
+  html += '</table>';
+  cont.innerHTML = html;
+}
+
+function renderizarCandidatos5to(){
+  const cont = document.getElementById('candidatos-5to-puesto');
+  if(!cont) return;
+
+  const dH = disciplinas.hombres;
+  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
+  const idxChico = dH.grupos.findIndex(g => g.length === 3);
+  if(idxGrande === -1 || idxChico === -1 || !dH.partidos){
+    cont.innerHTML = '';
+    return;
+  }
+
+  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  const tienePartidos = ultimaRonda && ultimaRonda.partidos && ultimaRonda.partidos.length === 3 && ultimaRonda.partidos[0].esCruce;
+  if(!tienePartidos){
+    cont.innerHTML = '';
+    return;
+  }
+
+  const tablaAFinal = calcularTablaFinalGrupoA();
+  const tablaB = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
+
+  const candidatos = [];
+  const terceroA = tablaAFinal[2];
+  candidatos.push({
+    equipo: terceroA.equipo,
+    origen: '3ro Grupo A (+1 pto bono)',
+    pts: terceroA.pts + 1,
+    dif: terceroA.dif,
+    gf: terceroA.gf
+  });
+
+  [{ e: tablaB[2], origen: '3ro Grupo B' }, { e: tablaB[3], origen: '4to Grupo B' }].forEach(item => {
+    const gano = gano3raRondaEquipoB(item.e.equipo);
+    candidatos.push({
+      equipo: item.e.equipo,
+      origen: item.origen + (gano ? ' (+1 pto, gano su 3ra ronda)' : ' (0 pto extra)'),
+      pts: item.e.pts + (gano ? 1 : 0),
+      dif: item.e.dif,
+      gf: item.e.gf
+    });
+  });
+
+  candidatos.sort((a, b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+
+  let html = '<b>Candidatos al 5to puesto</b>';
+  html += '<table><tr><th>Pos</th><th>Equipo</th><th>Origen</th><th>Pts (con bono)</th><th>Dif</th><th>GF</th></tr>';
+  candidatos.forEach((c, pos) => {
+    html += '<tr' + (pos === 0 ? ' class="top3"' : '') + '>' +
+      '<td>' + (pos + 1) + '</td><td>' + c.equipo + '</td><td>' + c.origen + '</td>' +
+      '<td>' + c.pts + '</td><td>' + (c.dif > 0 ? '+' : '') + c.dif + '</td><td>' + c.gf + '</td></tr>';
+  });
+  html += '</table>';
+  if(candidatos.length){
+    html += '<p class="add-note">🏅 5to lugar: <b>' + candidatos[0].equipo + '</b></p>';
+  }
+  cont.innerHTML = html;
+}
+
+// Tabla final de Grupo A: sus 2 partidos internos + el resultado de esta 3ra ronda
+// (cuenta con puntaje normal 3-1-0, ya que para Grupo A este SI es un partido de grupo real).
+function calcularTablaFinalGrupoA(){
   const dH = disciplinas.hombres;
   const idxChico = dH.grupos.findIndex(g => g.length === 3);
   const tablaBase = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
@@ -1022,56 +1125,48 @@ function calcularTablaExtendidaChico(){
       e.dif = e.gf - e.gc;
     });
   }
-  return Object.values(stats).sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+  return Object.values(stats).sort((a, b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
 }
 
-function calcularTablaExtendidaGrande(){
+// Para cada representante de Grupo B (2do, 3ro, 4to) en su partido extra: gano o no (1 punto o 0,
+// solo sirve para la comparacion del 5to lugar, nunca toca su tabla real de Grupo B).
+function gano3raRondaEquipoB(nombreEquipo){
   const dH = disciplinas.hombres;
-  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
-  const tablaBase = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
-  const stats = {};
-  tablaBase.forEach(e => { stats[e.equipo] = Object.assign({}, e); });
-
   const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  if(ultimaRonda && ultimaRonda.partidos){
-    ultimaRonda.partidos.forEach(p => {
-      if(typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number') return;
-      if(!stats[p.visitante]) return;
-      const e = stats[p.visitante];
-      e.pj++; e.gf += p.golesVisitante; e.gc += p.golesLocal;
-      if(p.golesVisitante > p.golesLocal){ e.pg++; e.pts += 3; }
-      else if(p.golesVisitante < p.golesLocal){ e.pp++; }
-      else { e.pe++; e.pts += 1; }
-      e.dif = e.gf - e.gc;
-    });
-  }
-  return Object.values(stats).sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+  if(!ultimaRonda || !ultimaRonda.partidos) return false;
+  const partido = ultimaRonda.partidos.find(p => p.visitante === nombreEquipo);
+  if(!partido || typeof partido.golesLocal !== 'number' || typeof partido.golesVisitante !== 'number') return false;
+  return partido.golesVisitante > partido.golesLocal;
 }
 
 function generarSemifinalFutbol(){
   const dH = disciplinas.hombres;
   if(!dH.calendarioSabado){
-    alert('Primero genera el calendario y los cruces.');
+    alert('Primero genera el calendario y la 3ra ronda de Grupo A.');
     return;
   }
 
-  const tablaChicoExt = calcularTablaExtendidaChico();
-  if(tablaChicoExt.some(e => e.pj < 3)){
-    alert('Todavía faltan resultados de los cruces. Completa esos 2 partidos antes de generar la Semifinal.');
+  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  const rondaListo = ultimaRonda && ultimaRonda.partidos && ultimaRonda.partidos.length === 3 &&
+    ultimaRonda.partidos.every(p => typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number');
+
+  if(!rondaListo){
+    alert('Todavía faltan resultados de los 3 partidos de la 3ra ronda de Grupo A. Complétalos antes de generar la Semifinal.');
     return;
   }
 
+  const tablaAFinal = calcularTablaFinalGrupoA();
   const idxGrande = dH.grupos.findIndex(g => g.length === 4);
-  const tablaGrande = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
+  const tablaB = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
 
-  const primeroChico = tablaChicoExt[0].equipo;
-  const segundoChico = tablaChicoExt[1].equipo;
-  const primeroGrande = tablaGrande[0].equipo;
-  const segundoGrande = tablaGrande[1].equipo;
+  const primeroA = tablaAFinal[0].equipo;
+  const segundoA = tablaAFinal[1].equipo;
+  const primeroB = tablaB[0].equipo;
+  const segundoB = tablaB[1].equipo;
 
   dH.semifinal = [
-    { local: primeroChico, visitante: segundoGrande, golesLocal: null, golesVisitante: null, ganador: null },
-    { local: primeroGrande, visitante: segundoChico, golesLocal: null, golesVisitante: null, ganador: null }
+    { local: primeroA, visitante: segundoB, golesLocal: null, golesVisitante: null, ganador: null },
+    { local: primeroB, visitante: segundoA, golesLocal: null, golesVisitante: null, ganador: null }
   ];
 
   guardarEstado();
@@ -1107,7 +1202,7 @@ function renderizarSemifinalFutbol(){
 
   const dH = disciplinas.hombres;
   if(!dH.semifinal){
-    cont.innerHTML = '<p class="add-note">Aún no se ha generado la Semifinal. Completa los cruces y da clic en "Generar Semifinal".</p>';
+    cont.innerHTML = '<p class="add-note">Aún no se ha generado la Semifinal. Completa la 3ra ronda de Grupo A y da clic en "Generar Semifinal".</p>';
     return;
   }
 
@@ -1132,6 +1227,118 @@ function renderizarSemifinalFutbol(){
   });
 }
 
+function generarFinalYPuestosFutbol(){
+  const dH = disciplinas.hombres;
+  if(!dH.semifinal || dH.semifinal.some(p => !p.ganador)){
+    alert('Completa el marcador de ambas Semifinales antes de generar la Final y los demás puestos.');
+    return;
+  }
+
+  const ganadores = dH.semifinal.map(p => p.ganador);
+  const perdedores = dH.semifinal.map(p => p.ganador === p.local ? p.visitante : p.local);
+
+  dH.final = { local: ganadores[0], visitante: ganadores[1], golesLocal: null, golesVisitante: null, ganador: null };
+
+  const perdedoresConDif = dH.semifinal.map((p, idx) => {
+    const perdioLocal = p.ganador !== p.local;
+    const dif = perdioLocal ? (p.golesLocal - p.golesVisitante) : (p.golesVisitante - p.golesLocal);
+    return { equipo: perdedores[idx], dif };
+  });
+  perdedoresConDif.sort((a, b) => b.dif - a.dif);
+  dH.tercerPuesto = perdedoresConDif[0].equipo;
+  dH.cuartoPuesto = perdedoresConDif[1].equipo;
+
+  // 5to lugar: 3ro de Grupo A (tabla final + 1 punto de bono) vs 3ro y 4to de Grupo B
+  // (tabla real de Grupo B + 1 punto si ganaron su partido extra de la 3ra ronda)
+  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
+  const tablaAFinal = calcularTablaFinalGrupoA();
+  const tablaB = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
+
+  const candidatos = [];
+
+  const terceroA = tablaAFinal[2];
+  candidatos.push({
+    equipo: terceroA.equipo,
+    pts: terceroA.pts + 1, // bono para emparejar con el limite de 1 punto de Grupo B
+    dif: terceroA.dif,
+    gf: terceroA.gf
+  });
+
+  [tablaB[2], tablaB[3]].forEach(e => {
+    const gano = gano3raRondaEquipoB(e.equipo);
+    candidatos.push({
+      equipo: e.equipo,
+      pts: e.pts + (gano ? 1 : 0),
+      dif: e.dif,
+      gf: e.gf
+    });
+  });
+
+  candidatos.sort((a, b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+  dH.quintoPuesto = candidatos[0].equipo;
+
+  guardarEstado();
+  renderizarFinalYPuestosFutbol();
+}
+
+function actualizarMarcadorFinal(campo, valor){
+  const dH = disciplinas.hombres;
+  dH.final[campo] = valor;
+
+  if(typeof dH.final.golesLocal === 'number' && typeof dH.final.golesVisitante === 'number'){
+    if(dH.final.golesLocal === dH.final.golesVisitante){
+      alert('No puede haber empate en la Final. Corrige el marcador.');
+      dH.final.golesLocal = null;
+      dH.final.golesVisitante = null;
+      dH.final.ganador = null;
+    } else {
+      dH.final.ganador = dH.final.golesLocal > dH.final.golesVisitante ? dH.final.local : dH.final.visitante;
+    }
+  } else {
+    dH.final.ganador = null;
+  }
+
+  guardarEstado();
+  renderizarFinalYPuestosFutbol();
+}
+
+function renderizarFinalYPuestosFutbol(){
+  const cont = document.getElementById('final-puestos-futbol');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  const dH = disciplinas.hombres;
+  if(!dH.final){
+    cont.innerHTML = '<p class="add-note">Aún no se ha generado la Final. Completa ambas Semifinales y da clic en "Generar Final y puestos".</p>';
+    return;
+  }
+
+  const soloLectura = !esOrganizador();
+  let html = '<table><tr><th>Puesto</th><th>Detalle</th></tr>';
+  html += '<tr><td>FINAL (1ro/2do)</td><td>' + dH.final.local +
+    ' <input type="number" min="0" id="final-golesLocal" style="width:36px;" value="' + (dH.final.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> - ' +
+    '<input type="number" min="0" id="final-golesVisitante" style="width:36px;" value="' + (dH.final.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> ' + dH.final.visitante +
+    (dH.final.ganador ? ' 🏆 ' + dH.final.ganador : '') + '</td></tr>';
+  html += '<tr><td>3er puesto</td><td>' + (dH.tercerPuesto || '—') + '</td></tr>';
+  html += '<tr><td>4to puesto</td><td>' + (dH.cuartoPuesto || '—') + '</td></tr>';
+  html += '<tr><td>5to puesto</td><td>' + (dH.quintoPuesto || '—') + '</td></tr>';
+  html += '</table>';
+  cont.innerHTML = html;
+
+  const inputLocal = document.getElementById('final-golesLocal');
+  const inputVisitante = document.getElementById('final-golesVisitante');
+  if(inputLocal){
+    inputLocal.addEventListener('change', (e) => {
+      actualizarMarcadorFinal('golesLocal', e.target.value === '' ? null : Number(e.target.value));
+    });
+  }
+  if(inputVisitante){
+    inputVisitante.addEventListener('change', (e) => {
+      actualizarMarcadorFinal('golesVisitante', e.target.value === '' ? null : Number(e.target.value));
+    });
+  }
+}
+
 function renderizarGrupos(){
   const d = disciplinas[disciplinaActual];
   document.querySelector('#s2 h1').textContent = 'Grupos generados — ' + d.titulo;
@@ -1146,6 +1353,12 @@ function renderizarGrupos(){
   if(cardSemifinal){
     cardSemifinal.style.display = (disciplinaActual === 'hombres') ? '' : 'none';
     if(disciplinaActual === 'hombres') renderizarSemifinalFutbol();
+  }
+
+  const cardFinal = document.getElementById('card-final-futbol');
+  if(cardFinal){
+    cardFinal.style.display = (disciplinaActual === 'hombres') ? '' : 'none';
+    if(disciplinaActual === 'hombres') renderizarFinalYPuestosFutbol();
   }
 
   const cont = document.querySelector('#s2 .grupos');
@@ -1591,6 +1804,13 @@ function renderizarTabla(){
       '<td>' + (pos+1) + '</td><td>' + e.equipo + '</td><td>' + e.pj + '</td><td>' + e.pg + '</td>' +
       '<td>' + e.pe + '</td><td>' + e.pp + '</td><td>' + (e.dif > 0 ? '+' : '') + e.dif + '</td><td>' + e.pts + '</td></tr>';
   });
+
+  const cardTerceraRonda = document.getElementById('card-tercera-ronda-grupoA');
+  if(cardTerceraRonda){
+    const esGrupoChicoDeFutbol = (disciplinaActual === 'hombres' && equiposDelGrupo.length === 3);
+    cardTerceraRonda.style.display = esGrupoChicoDeFutbol ? '' : 'none';
+    if(esGrupoChicoDeFutbol) renderizarTerceraRondaGrupoA();
+  }
 }
 
 function rehacerSorteo(){

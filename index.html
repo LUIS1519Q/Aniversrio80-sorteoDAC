@@ -139,7 +139,7 @@
       <b>Calendario del sábado — Fútbol Masculino + Femenino (4 canchas)</b>
       <div class="btn-row" id="boton-generar-calendario-futbol">
         <button class="btn oro" onclick="generarCalendarioFutbolSabado()">📅 Generar calendario del sábado</button>
-        <button class="btn" onclick="generarCrucesFutbol()" style="background:var(--azul-cielo);">🔀 Generar cruces (con tabla ya jugada)</button>
+        <button class="btn" onclick="generarTerceraRondaGrupoA()" style="background:var(--azul-cielo);">🔀 Generar 3ra ronda de Grupo A</button>
       </div>
       <div id="calendario-futbol-sabado" style="margin-top:10px;overflow-x:auto;"></div>
     </div>
@@ -150,6 +150,14 @@
         <button class="btn oro" onclick="generarSemifinalFutbol()">🏆 Generar Semifinal</button>
       </div>
       <div id="semifinal-futbol" style="margin-top:10px;overflow-x:auto;"></div>
+    </div>
+
+    <div class="card" id="card-final-futbol">
+      <b>Final y puestos — Fútbol Masculino (domingo)</b>
+      <div class="btn-row" id="boton-generar-final">
+        <button class="btn oro" onclick="generarFinalYPuestosFutbol()">🥇 Generar Final y puestos</button>
+      </div>
+      <div id="final-puestos-futbol" style="margin-top:10px;overflow-x:auto;"></div>
     </div>
 
     <div class="btn-row"><button class="btn" onclick="irAtras(2)">← Atrás</button><button class="btn oro" onclick="generarPartidos(); ir(3)">Ver partidos y tabla →</button></div>
@@ -172,6 +180,15 @@
       <table id="tabla-posiciones">
         <!-- Las filas de la tabla se generan dinámicamente con JS -->
       </table>
+    </div>
+    <div class="card" id="card-tercera-ronda-grupoA">
+      <b>3ra ronda de Grupo A (contra 2do/3ro/4to de Grupo B)</b>
+      <div class="btn-row" id="boton-generar-3ra-ronda">
+        <button class="btn" onclick="generarTerceraRondaGrupoA()" style="background:var(--azul-cielo);">🔀 Generar 3ra ronda de Grupo A</button>
+      </div>
+      <div id="tercera-ronda-grupoA" style="margin-top:10px;overflow-x:auto;"></div>
+      <div id="tabla-final-grupoA" style="margin-top:14px;overflow-x:auto;"></div>
+      <div id="candidatos-5to-puesto" style="margin-top:14px;overflow-x:auto;"></div>
     </div>
     <div class="btn-row">
       <button class="btn" onclick="irAtras(3)">← Atrás</button>
