@@ -13,7 +13,7 @@ const disciplinas = {
   basquet: {
     titulo: 'Básquet Mixto',
     numGrupos: 3,
-    equipos: ['Rebote DGAC','Los Altos','Canasta Aérea','Base Norte','Triple A','Zona Pintada','Salto Alto','Aro 80']
+    equipos: ['ADMINISTRATIVA','COTOPAXI','FINANCIERO','EPMSA','ZONAL','LMDS','RADAR','TALMA']
   },
   voley: {
     titulo: 'Ecuavoley',
@@ -21,6 +21,33 @@ const disciplinas = {
     equipos: ['Bloqueo Total','Remate DAC','Saque Alto','Red Sur','Los Rematadores','Ace Aéreo','Cancha Norte','Voley 80']
   }
 };
+
+// --- Datos FIJOS confirmados con el jefe (imágenes) ---
+const FUTBOL_EQUIPOS_FIJOS = ['RADAR','LMDS','TALMA','ADMINISTRATIVA','EPMSA','COTOPAXI','ZONAL'];
+const FUTBOL_PARTIDOS_BASE_FIJOS = [
+  { local: 'RADAR', visitante: 'LMDS' },
+  { local: 'TALMA', visitante: 'ADMINISTRATIVA' },
+  { local: 'EPMSA', visitante: 'COTOPAXI' },
+  { local: 'ADMINISTRATIVA', visitante: 'LMDS' },
+  { local: 'ZONAL', visitante: 'TALMA' },
+  { local: 'COTOPAXI', visitante: 'RADAR' },
+  { local: 'EPMSA', visitante: 'ZONAL' }
+];
+
+const BASQUET_QF_FIJOS = [
+  { local: 'ADMINISTRATIVA', visitante: 'COTOPAXI', llave: 'QF1' },
+  { local: 'FINANCIERO', visitante: 'EPMSA', llave: 'QF2' },
+  { local: 'ZONAL', visitante: 'LMDS', llave: 'QF3' },
+  { local: 'RADAR', visitante: 'TALMA', llave: 'QF4' }
+];
+
+const ECUAVOLEY_QF_FIJOS = [
+  { local: 'RADAR', visitante: 'LMDS', llave: 'QF1' },
+  { local: 'TALMA', visitante: 'ZONAL', llave: 'QF2' },
+  { local: 'TRANSPORTACIÓN', visitante: 'TALMA', llave: 'QF3' },
+  { local: 'EPMSA', visitante: 'ADMINISTRATIVA', llave: 'QF4' },
+  { local: 'COTOPAXI', visitante: 'LMDS', llave: 'QF5' }
+];
 
 let mundial40 = {
   parejas: [],
@@ -469,22 +496,36 @@ async function cargarEstado(){
             grupos: guardado.grupos || undefined,
             partidos: guardado.partidos || undefined,
             bracket: guardado.bracket || undefined,
-            calendarioSabado: guardado.calendarioSabado || undefined,
-            calendarioVoley: guardado.calendarioVoley || undefined,
-            semifinal: guardado.semifinal || undefined,
-            final: guardado.final || undefined,
-            tercerPuesto: guardado.tercerPuesto || undefined,
-            cuartoPuesto: guardado.cuartoPuesto || undefined,
-            quintoPuesto: guardado.quintoPuesto || undefined,
-            tiposEquipo: guardado.tiposEquipo || undefined,
-            jugadoresPorEquipo: guardado.jugadoresPorEquipo || undefined,
+            // Fútbol masculino fijo
+            partidosFijos: guardado.partidosFijos || undefined,
+            tablaFutbolFinal: guardado.tablaFutbolFinal || undefined,
+            semifinalFutbolFija: guardado.semifinalFutbolFija || undefined,
+            finalFutbolFija: guardado.finalFutbolFija || undefined,
+            tercerPuestoFijo: guardado.tercerPuestoFijo || undefined,
+            cuartoPuestoFijo: guardado.cuartoPuestoFijo || undefined,
+            quintoPuestoFijo: guardado.quintoPuestoFijo || undefined,
+            sextoPuestoFijo: guardado.sextoPuestoFijo || undefined,
+            septimoPuestoFijo: guardado.septimoPuestoFijo || undefined,
+            // Básquet fijo
             rondaUno: guardado.rondaUno || undefined,
             semifinalesBasquet: guardado.semifinalesBasquet || undefined,
             perdedoresBasquet: guardado.perdedoresBasquet || undefined,
             finalBasquet: guardado.finalBasquet || undefined,
             tercerPuestoBasquet: guardado.tercerPuestoBasquet || undefined,
             cuartoPuestoBasquet: guardado.cuartoPuestoBasquet || undefined,
-            quintoPuestoBasquet: guardado.quintoPuestoBasquet || undefined
+            quintoPuestoBasquet: guardado.quintoPuestoBasquet || undefined,
+            // Ecuavoley fijo
+            cuartosVoley: guardado.cuartosVoley || undefined,
+            tablaGanadoresVoley: guardado.tablaGanadoresVoley || undefined,
+            tablaPerdedoresVoley: guardado.tablaPerdedoresVoley || undefined,
+            semifinalesGanadoresVoley: guardado.semifinalesGanadoresVoley || undefined,
+            semifinalesPerdedoresVoley: guardado.semifinalesPerdedoresVoley || undefined,
+            finalGanadoresVoley: guardado.finalGanadoresVoley || undefined,
+            finalPerdedoresVoley: guardado.finalPerdedoresVoley || undefined,
+            tercerPuestoVoley: guardado.tercerPuestoVoley || undefined,
+            cuartoPuestoVoley: guardado.cuartoPuestoVoley || undefined,
+            septimoPuestoVoley: guardado.septimoPuestoVoley || undefined,
+            octavoPuestoVoley: guardado.octavoPuestoVoley || undefined
           };
         }
       });
@@ -527,9 +568,6 @@ function aplicarModoLectura(){
   const idsAOcultar = [
     'card-agregar-equipo', 'botones-sorteo', 'card-inscribir-pareja',
     'boton-generar-bracket-mundial', 'boton-regenerar-bracket', 'card-num-grupos',
-    'boton-generar-calendario-futbol', 'boton-generar-semifinal', 'boton-generar-final',
-    'boton-generar-3ra-ronda', 'boton-generar-ronda1-basquet', 'btn-generar-fase2-basquet',
-    'boton-generar-calendario-voley', 'boton-generar-semifinal-voley', 'boton-generar-final-voley',
     'card-inscribir-jenga', 'boton-generar-bracket-jenga'
   ];
   idsAOcultar.forEach(id => {
@@ -545,24 +583,22 @@ function seleccionarDisciplina(clave, navegar){
   const d = disciplinas[clave];
   document.getElementById('titulo-sorteo').textContent = 'Sorteo de equipos — ' + d.titulo;
 
-  const selectorTipoEquipo = document.getElementById('tipo-nuevo-equipo');
-  if(selectorTipoEquipo) selectorTipoEquipo.style.display = (clave === 'basquet') ? '' : 'none';
-  renderizarEquiposBasquet();
-  renderizarJugadoresMixtos();
-
   const esBasquet = (clave === 'basquet');
+  const esHombres = (clave === 'hombres');
+  const esVoley = (clave === 'voley');
   const cardNumGrupos = document.getElementById('card-num-grupos');
   const bloqueSorteoGrupos = document.getElementById('bloque-sorteo-grupos');
-  const cardRonda1Basquet = document.getElementById('card-ronda1-basquet');
 
-  if(cardNumGrupos) cardNumGrupos.style.display = esBasquet ? 'none' : (esOrganizador() ? '' : 'none');
-  if(bloqueSorteoGrupos) bloqueSorteoGrupos.style.display = esBasquet ? 'none' : '';
-  if(cardRonda1Basquet) cardRonda1Basquet.style.display = esBasquet ? '' : 'none';
-
-  if(esBasquet){
-    if(navegar) ir(1);
+  // Fútbol Hombres, Básquet y Ecuavoley ya no usan sorteo manual: son fijos y confirmados.
+  if(esBasquet || esHombres || esVoley){
+    if(cardNumGrupos) cardNumGrupos.style.display = 'none';
+    if(bloqueSorteoGrupos) bloqueSorteoGrupos.style.display = 'none';
+    if(navegar) ir(2);
     return;
   }
+
+  if(cardNumGrupos) cardNumGrupos.style.display = esOrganizador() ? '' : 'none';
+  if(bloqueSorteoGrupos) bloqueSorteoGrupos.style.display = '';
 
   const selectorNumGrupos = document.getElementById('selector-num-grupos');
   selectorNumGrupos.innerHTML = '';
@@ -714,82 +750,6 @@ function colocarEquipoEnGrupo(nombre, grupoIdx){
   seleccionarDisciplina(disciplinaActual, false);
 }
 
-function generarCalendarioFutbolSabado(){
-  const dH = disciplinas.hombres;
-  const dM = disciplinas.mujeres;
-  if(!dH.grupos || dH.grupos.length !== 2){
-    alert('Fútbol Masculino debe estar sorteado en exactamente 2 grupos.');
-    return;
-  }
-  const grupoChico = dH.grupos.find(g => g.length === 3);
-  const grupoGrande = dH.grupos.find(g => g.length === 4);
-  if(!grupoChico || !grupoGrande){ alert('Los grupos deben ser de 3 y 4 equipos.'); return; }
-
-  const roundsGrande = rondasRoundRobin(grupoGrande);
-  const roundsChico = rondasRoundRobin(grupoChico);
-  const equiposFem = (dM.equipos || []).slice(0, 3);
-  const roundsFem = equiposFem.length === 3 ? rondasRoundRobin(equiposFem) : [[], [], []];
-
-  const DUR = 45, DESCANSO = 5, ORGANIZACION = 5;
-  const calendario = [];
-  let horaMin = horaATotalMinutos('11:00');
-
-  for(let i = 0; i < 3; i++){
-    const partidosRonda = [];
-    roundsGrande[i].forEach(p => partidosRonda.push({ tipo: 'M', local: p.local, visitante: p.visitante }));
-    roundsChico[i].forEach(p => partidosRonda.push({ tipo: 'M', local: p.local, visitante: p.visitante }));
-    if(roundsFem[i] && roundsFem[i].length) {
-      roundsFem[i].forEach(p => partidosRonda.push({ tipo: 'F', local: p.local, visitante: p.visitante }));
-    }
-    calendario.push({ filaTipo: 'juego', horaIni: horaMin, horaFin: horaMin + DUR, partidos: partidosRonda });
-    horaMin += DUR;
-    if(i < 2){
-      calendario.push({ filaTipo: 'descanso', horaIni: horaMin, horaFin: horaMin + DESCANSO });
-      horaMin += DESCANSO;
-      calendario.push({ filaTipo: 'organizacion', horaIni: horaMin, horaFin: horaMin + ORGANIZACION });
-      horaMin += ORGANIZACION;
-    }
-  }
-
-  calendario.push({ filaTipo: 'descanso', horaIni: horaMin, horaFin: horaMin + DESCANSO });
-  horaMin += DESCANSO;
-  calendario.push({ filaTipo: 'organizacion', horaIni: horaMin, horaFin: horaMin + ORGANIZACION });
-  horaMin += ORGANIZACION;
-  calendario.push({
-    filaTipo: 'juego',
-    horaIni: horaMin, horaFin: horaMin + DUR,
-    partidos: [
-      { tipo: 'M', local: '1ro Grupo (3)', visitante: '2do Grupo (4)', pendienteDeTabla: true },
-      { tipo: 'M', local: '2do Grupo (3)', visitante: '3ro Grupo (4)', pendienteDeTabla: true },
-      { tipo: 'M', local: '3ro Grupo (3)', visitante: '4to Grupo (4)', pendienteDeTabla: true }
-    ]
-  });
-
-  dH.calendarioSabado = calendario;
-  guardarEstado();
-  renderizarCalendarioFutbol();
-}
-
-function rondasRoundRobin(equipos){
-  const arr = equipos.slice();
-  if(arr.length % 2 !== 0) arr.push('BYE');
-  const n = arr.length;
-  const rondas = [];
-  for(let r = 0; r < n - 1; r++){
-    const partidos = [];
-    for(let i = 0; i < n / 2; i++){
-      const local = arr[i];
-      const visitante = arr[n - 1 - i];
-      if(local !== 'BYE' && visitante !== 'BYE') partidos.push({ local, visitante });
-    }
-    rondas.push(partidos);
-    const ultimo = arr[n - 1];
-    for(let i = n - 1; i > 1; i--) arr[i] = arr[i - 1];
-    arr[1] = ultimo;
-  }
-  return rondas;
-}
-
 function horaATotalMinutos(hhmm){
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
@@ -801,607 +761,165 @@ function minutosAHora(total){
   return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 
-function renderizarCalendarioFutbol(){
-  const cont = document.getElementById('calendario-futbol-sabado');
-  if(!cont) return;
-  cont.innerHTML = '';
+// ===== FÚTBOL MASCULINO — CALENDARIO FIJO (7 partidos confirmados) =====
 
+function inicializarFutbolFijo(){
   const dH = disciplinas.hombres;
-  if(!dH.calendarioSabado){
-    cont.innerHTML = '<p class="add-note">Aún no se ha generado el calendario. Sortea Fútbol en 2 grupos y da clic en "Generar calendario".</p>';
-    return;
+  if(!dH.partidosFijos){
+    dH.partidosFijos = FUTBOL_PARTIDOS_BASE_FIJOS.map(p => ({ local: p.local, visitante: p.visitante, golesLocal: null, golesVisitante: null }));
+    guardarEstado();
   }
-
-  const tabla = document.createElement('table');
-  let html = '<tr><th>Hora</th><th>Tipo</th><th>Cancha 1</th><th>Cancha 2</th><th>Cancha 3</th><th>Cancha 4</th></tr>';
-
-  dH.calendarioSabado.forEach(fila => {
-    const horaTexto = minutosAHora(fila.horaIni) + '-' + minutosAHora(fila.horaFin);
-    if(fila.filaTipo === 'descanso'){
-      html += '<tr style="background:rgba(232,184,75,.15);"><td>' + horaTexto + '</td><td>Descanso (5 min)</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
-    } else if(fila.filaTipo === 'organizacion'){
-      html += '<tr style="background:rgba(112,48,160,.15);"><td>' + horaTexto + '</td><td>Organización (5 min)</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
-    } else {
-      const celdas = ['', '', '', ''];
-      fila.partidos.forEach((p, idx) => {
-        let etiqueta = p.local + ' vs ' + p.visitante + ' (' + p.tipo + ')';
-        if(p.pendienteDeTabla) etiqueta += ' ⚠️ pendiente';
-        if(p.esCruce){
-          const marcador = (typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number')
-            ? ' (' + p.golesLocal + '-' + p.golesVisitante + ')'
-            : ' (por jugar)';
-          etiqueta += marcador;
-        }
-        if(idx < 4) celdas[idx] = etiqueta;
-      });
-      html += '<tr><td>' + horaTexto + '</td><td>Juego</td><td>' + celdas[0] + '</td><td>' + celdas[1] + '</td><td>' + celdas[2] + '</td><td>' + celdas[3] + '</td></tr>';
-    }
-  });
-  tabla.innerHTML = html;
-  cont.appendChild(tabla);
 }
 
-function generarTerceraRondaGrupoA(){
+function actualizarMarcadorFutbolFijo(idx, campo, valorStr){
   const dH = disciplinas.hombres;
-  if(!dH.grupos || !dH.partidos) return;
+  dH.partidosFijos[idx][campo] = valorStr === '' ? null : Number(valorStr);
+  guardarEstado();
+  renderizarFutbolFijo();
+}
 
-  const idxChico = dH.grupos.findIndex(g => g.length === 3);
-  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
-  if(idxChico === -1 || idxGrande === -1) return;
+function calcularTablaFutbolFija(){
+  const dH = disciplinas.hombres;
+  return calcularTabla(FUTBOL_EQUIPOS_FIJOS, dH.partidosFijos || []);
+}
 
-  const tablaChico = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
-  const tablaGrande = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
-  if(tablaChico.some(e => e.pj < 2) || tablaGrande.some(e => e.pj < 3)){
-    alert('Faltan partidos de la fase de grupos por jugar.'); return;
+function generarSemifinalFutbolFija(){
+  const dH = disciplinas.hombres;
+  if(!dH.partidosFijos || dH.partidosFijos.some(p => typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number')){
+    alert('Completa los 7 partidos primero.'); return;
   }
-
-  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  ultimaRonda.partidos = [
-    { tipo: 'M', local: tablaChico[0].equipo, visitante: tablaGrande[1].equipo, golesLocal: null, golesVisitante: null, esCruce: true },
-    { tipo: 'M', local: tablaChico[1].equipo, visitante: tablaGrande[2].equipo, golesLocal: null, golesVisitante: null, esCruce: true },
-    { tipo: 'M', local: tablaChico[2].equipo, visitante: tablaGrande[3].equipo, golesLocal: null, golesVisitante: null, esCruce: true }
+  const tabla = calcularTablaFutbolFija();
+  dH.tablaFutbolFinal = tabla;
+  dH.semifinalFutbolFija = [
+    { local: tabla[0].equipo, visitante: tabla[3].equipo, golesLocal: null, golesVisitante: null, ganador: null },
+    { local: tabla[1].equipo, visitante: tabla[2].equipo, golesLocal: null, golesVisitante: null, ganador: null }
   ];
   guardarEstado();
-  renderizarCalendarioFutbol();
-  renderizarTerceraRondaGrupoA();
+  renderizarFutbolFijo();
 }
 
-function actualizarMarcadorTerceraRonda(numPartido, campo, valor){
+function actualizarMarcadorSemifinalFutbolFija(idx, campo, valorStr){
   const dH = disciplinas.hombres;
-  const ultimaRonda = dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  ultimaRonda.partidos[numPartido][campo] = valor;
+  const p = dH.semifinalFutbolFija[idx];
+  p[campo] = valorStr === '' ? null : Number(valorStr);
+  if(typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number'){
+    if(p.golesLocal === p.golesVisitante){ alert('No puede haber empate.'); p.golesLocal = null; p.golesVisitante = null; p.ganador = null; }
+    else p.ganador = p.golesLocal > p.golesVisitante ? p.local : p.visitante;
+  } else p.ganador = null;
   guardarEstado();
-  renderizarTerceraRondaGrupoA();
-  renderizarCalendarioFutbol();
+  renderizarFutbolFijo();
 }
 
-function renderizarTerceraRondaGrupoA(){
-  const cont = document.getElementById('tercera-ronda-grupoA');
-  if(!cont) return;
-  cont.innerHTML = '';
+function generarFinalFutbolFija(){
   const dH = disciplinas.hombres;
-  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  const tienePartidos = ultimaRonda && ultimaRonda.partidos && ultimaRonda.partidos.length === 3 && ultimaRonda.partidos[0].esCruce;
-  if(!tienePartidos){
-    cont.innerHTML = '<p class="add-note">Aún no se ha generado la 3ra ronda.</p>'; return;
-  }
+  if(!dH.semifinalFutbolFija || dH.semifinalFutbolFija.some(p => !p.ganador)){ alert('Completa ambas Semifinales primero.'); return; }
+  const sf1 = dH.semifinalFutbolFija[0], sf2 = dH.semifinalFutbolFija[1];
+  dH.finalFutbolFija = { local: sf1.ganador, visitante: sf2.ganador, golesLocal: null, golesVisitante: null, ganador: null };
 
+  const perd1 = sf1.ganador === sf1.local ? sf1.visitante : sf1.local;
+  const perd2 = sf2.ganador === sf2.local ? sf2.visitante : sf2.local;
+  const tabla = dH.tablaFutbolFinal || calcularTablaFutbolFija();
+  const posEnTabla = (equipo) => tabla.findIndex(e => e.equipo === equipo);
+  if(posEnTabla(perd1) < posEnTabla(perd2)){ dH.tercerPuestoFijo = perd1; dH.cuartoPuestoFijo = perd2; }
+  else { dH.tercerPuestoFijo = perd2; dH.cuartoPuestoFijo = perd1; }
+
+  dH.quintoPuestoFijo = tabla[4].equipo;
+  dH.sextoPuestoFijo = tabla[5].equipo;
+  dH.septimoPuestoFijo = tabla[6].equipo;
+
+  guardarEstado();
+  renderizarFutbolFijo();
+}
+
+function actualizarMarcadorFinalFutbolFija(campo, valorStr){
+  const dH = disciplinas.hombres;
+  const f = dH.finalFutbolFija;
+  f[campo] = valorStr === '' ? null : Number(valorStr);
+  if(typeof f.golesLocal === 'number' && typeof f.golesVisitante === 'number'){
+    if(f.golesLocal === f.golesVisitante){ alert('No puede haber empate.'); f.golesLocal = null; f.golesVisitante = null; f.ganador = null; }
+    else f.ganador = f.golesLocal > f.golesVisitante ? f.local : f.visitante;
+  } else f.ganador = null;
+  guardarEstado();
+  renderizarFutbolFijo();
+}
+
+function rehacerFutbolFijo(){
+  if(!confirm('¿Seguro que quieres borrar los resultados de Fútbol Masculino (partidos, semis, final y puestos)?')) return;
+  const dH = disciplinas.hombres;
+  dH.partidosFijos = FUTBOL_PARTIDOS_BASE_FIJOS.map(p => ({ local: p.local, visitante: p.visitante, golesLocal: null, golesVisitante: null }));
+  dH.tablaFutbolFinal = undefined;
+  dH.semifinalFutbolFija = undefined;
+  dH.finalFutbolFija = undefined;
+  dH.tercerPuestoFijo = undefined;
+  dH.cuartoPuestoFijo = undefined;
+  dH.quintoPuestoFijo = undefined;
+  dH.sextoPuestoFijo = undefined;
+  dH.septimoPuestoFijo = undefined;
+  guardarEstado();
+  renderizarFutbolFijo();
+}
+
+function renderizarFutbolFijo(){
+  const cont = document.getElementById('futbol-fijo-contenedor');
+  if(!cont) return;
+  inicializarFutbolFijo();
+  const dH = disciplinas.hombres;
   const soloLectura = !esOrganizador();
-  let html = '<table><tr><th>Partido</th><th>Grupo A</th><th>Marcador</th><th>Grupo B</th></tr>';
-  ultimaRonda.partidos.forEach((p, idx) => {
-    html += '<tr><td>3ra ronda ' + (idx + 1) + '</td><td>' + p.local + '</td>' +
-      '<td><input type="number" min="0" class="input-3ra" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesLocal" value="' + (p.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> - ' +
-      '<input type="number" min="0" class="input-3ra" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesVisitante" value="' + (p.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '></td>' +
-      '<td>' + p.visitante + '</td></tr>';
-  });
-  html += '</table>';
-  cont.innerHTML = html;
-
-  cont.querySelectorAll('.input-3ra').forEach(input => {
-    input.addEventListener('change', (e) => {
-      const numPartido = Number(e.target.dataset.numpartido);
-      const campo = e.target.dataset.campo;
-      const valor = e.target.value === '' ? null : Number(e.target.value);
-      actualizarMarcadorTerceraRonda(numPartido, campo, valor);
-    });
-  });
-
-  renderizarTablaFinalGrupoA();
-  renderizarCandidatos5to();
-}
-
-function renderizarTablaFinalGrupoA(){
-  const cont = document.getElementById('tabla-final-grupoA');
-  if(!cont) return;
-  const dH = disciplinas.hombres;
-  if(!dH.grupos || dH.grupos.findIndex(g => g.length === 3) === -1){ cont.innerHTML = ''; return; }
-  const tabla = calcularTablaFinalGrupoA();
-  let html = '<b>Tabla final de Grupo A (2 partidos internos + 3ra ronda)</b>';
-  html += '<table><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>';
-  tabla.forEach((e, pos) => {
-    html += '<tr' + (pos < 2 ? ' class="top3"' : '') + '>' +
-      '<td>' + (pos + 1) + '</td><td>' + e.equipo + '</td><td>' + e.pj + '</td><td>' + e.pg + '</td>' +
-      '<td>' + e.pe + '</td><td>' + e.pp + '</td><td>' + (e.dif > 0 ? '+' : '') + e.dif + '</td><td>' + e.pts + '</td></tr>';
-  });
-  html += '</table>';
-  cont.innerHTML = html;
-}
-
-function renderizarCandidatos5to(){
-  const cont = document.getElementById('candidatos-5to-puesto');
-  if(!cont) return;
-  const dH = disciplinas.hombres;
-  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
-  const idxChico = dH.grupos.findIndex(g => g.length === 3);
-  if(idxGrande === -1 || idxChico === -1 || !dH.partidos){ cont.innerHTML = ''; return; }
-
-  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  if(!ultimaRonda || !ultimaRonda.partidos || !ultimaRonda.partidos[0].esCruce){ cont.innerHTML = ''; return; }
-
-  const tablaAFinal = calcularTablaFinalGrupoA();
-  const tablaB = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
-
-  const candidatos = [];
-  const terceroA = tablaAFinal[2];
-  candidatos.push({ equipo: terceroA.equipo, origen: '3ro Grupo A (+1 pto bono)', pts: terceroA.pts + 1, dif: terceroA.dif, gf: terceroA.gf });
-
-  [{ e: tablaB[2], origen: '3ro Grupo B' }, { e: tablaB[3], origen: '4to Grupo B' }].forEach(item => {
-    const gano = gano3raRondaEquipoB(item.e.equipo);
-    candidatos.push({ equipo: item.e.equipo, origen: item.origen + (gano ? ' (+1 pto, ganó 3ra ronda)' : ' (0 pto)'), pts: item.e.pts + (gano ? 1 : 0), dif: item.e.dif, gf: item.e.gf });
-  });
-  candidatos.sort((a, b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
-
-  let html = '<b>Candidatos al 5to puesto</b>';
-  html += '<table><tr><th>Pos</th><th>Equipo</th><th>Origen</th><th>Pts (con bono)</th><th>Dif</th><th>GF</th></tr>';
-  candidatos.forEach((c, pos) => {
-    html += '<tr' + (pos === 0 ? ' class="top3"' : '') + '>' +
-      '<td>' + (pos + 1) + '</td><td>' + c.equipo + '</td><td>' + c.origen + '</td>' +
-      '<td>' + c.pts + '</td><td>' + (c.dif > 0 ? '+' : '') + c.dif + '</td><td>' + c.gf + '</td></tr>';
-  });
-  html += '</table>';
-  if(candidatos.length) html += '<p class="add-note">🏅 5to lugar: <b>' + candidatos[0].equipo + '</b></p>';
-  cont.innerHTML = html;
-}
-
-function calcularTablaFinalGrupoA(){
-  const dH = disciplinas.hombres;
-  const idxChico = dH.grupos.findIndex(g => g.length === 3);
-  const tablaBase = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
-  const stats = {};
-  tablaBase.forEach(e => { stats[e.equipo] = Object.assign({}, e); });
-  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  if(ultimaRonda && ultimaRonda.partidos){
-    ultimaRonda.partidos.forEach(p => {
-      if(typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number') return;
-      if(!stats[p.local]) return;
-      const e = stats[p.local];
-      e.pj++; e.gf += p.golesLocal; e.gc += p.golesVisitante;
-      if(p.golesLocal > p.golesVisitante){ e.pg++; e.pts += 3; }
-      else if(p.golesLocal < p.golesVisitante){ e.pp++; }
-      else { e.pe++; e.pts += 1; }
-      e.dif = e.gf - e.gc;
-    });
-  }
-  return Object.values(stats).sort((a, b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
-}
-
-function gano3raRondaEquipoB(nombreEquipo){
-  const dH = disciplinas.hombres;
-  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  if(!ultimaRonda || !ultimaRonda.partidos) return false;
-  const partido = ultimaRonda.partidos.find(p => p.visitante === nombreEquipo);
-  if(!partido || typeof partido.golesLocal !== 'number' || typeof partido.golesVisitante !== 'number') return false;
-  return partido.golesVisitante > partido.golesLocal;
-}
-
-function generarSemifinalFutbol(){
-  const dH = disciplinas.hombres;
-  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
-  if(!ultimaRonda || !ultimaRonda.partidos || ultimaRonda.partidos.some(p => typeof p.golesLocal !== 'number')) {
-    alert('Faltan resultados de la 3ra ronda de Grupo A.'); return;
-  }
-  const tablaAFinal = calcularTablaFinalGrupoA();
-  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
-  const tablaB = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
-  dH.semifinal = [
-    { local: tablaAFinal[0].equipo, visitante: tablaB[1].equipo, golesLocal: null, golesVisitante: null, ganador: null },
-    { local: tablaB[0].equipo, visitante: tablaAFinal[1].equipo, golesLocal: null, golesVisitante: null, ganador: null }
-  ];
-  guardarEstado();
-  renderizarSemifinalFutbol();
-}
-
-function actualizarMarcadorSemifinal(numPartido, campo, valor){
-  const dH = disciplinas.hombres;
-  const partido = dH.semifinal[numPartido];
-  partido[campo] = valor;
-  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
-    if(partido.golesLocal === partido.golesVisitante){
-      alert('No puede haber empate en Semifinal.');
-      partido.golesLocal = null; partido.golesVisitante = null; partido.ganador = null;
-    } else {
-      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
-    }
-  } else {
-    partido.ganador = null;
-  }
-  guardarEstado();
-  renderizarSemifinalFutbol();
-}
-
-function renderizarSemifinalFutbol(){
-  const cont = document.getElementById('semifinal-futbol');
-  if(!cont) return;
-  cont.innerHTML = '';
-  const dH = disciplinas.hombres;
-  if(!dH.semifinal){ cont.innerHTML = '<p class="add-note">Aún no se ha generado la Semifinal.</p>'; return; }
-
-  const soloLectura = !esOrganizador();
-  let html = '<table><tr><th>Semifinal</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
-  dH.semifinal.forEach((p, idx) => {
-    html += '<tr><td>SF' + (idx + 1) + '</td><td>' + p.local + '</td>' +
-      '<td><input type="number" min="0" class="input-semi" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesLocal" value="' + (p.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> - ' +
-      '<input type="number" min="0" class="input-semi" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesVisitante" value="' + (p.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '></td>' +
-      '<td>' + p.visitante + '</td><td>' + (p.ganador || '—') + '</td></tr>';
-  });
-  html += '</table>';
-  cont.innerHTML = html;
-
-  cont.querySelectorAll('.input-semi').forEach(input => {
-    input.addEventListener('change', (e) => {
-      actualizarMarcadorSemifinal(Number(e.target.dataset.numpartido), e.target.dataset.campo, e.target.value === '' ? null : Number(e.target.value));
-    });
-  });
-}
-
-function generarFinalYPuestosFutbol(){
-  const dH = disciplinas.hombres;
-  if(!dH.semifinal || dH.semifinal.some(p => !p.ganador)){
-    alert('Completa ambas Semifinales primero.'); return;
-  }
-  const ganadores = dH.semifinal.map(p => p.ganador);
-  const perdedores = dH.semifinal.map(p => p.ganador === p.local ? p.visitante : p.local);
-
-  dH.final = { local: ganadores[0], visitante: ganadores[1], golesLocal: null, golesVisitante: null, ganador: null };
-
-  const perdedoresConDif = dH.semifinal.map((p, idx) => {
-    const perdioLocal = p.ganador !== p.local;
-    const dif = perdioLocal ? (p.golesLocal - p.golesVisitante) : (p.golesVisitante - p.golesLocal);
-    return { equipo: perdedores[idx], dif };
-  });
-  perdedoresConDif.sort((a, b) => b.dif - a.dif);
-  dH.tercerPuesto = perdedoresConDif[0].equipo;
-  dH.cuartoPuesto = perdedoresConDif[1].equipo;
-
-  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
-  const tablaAFinal = calcularTablaFinalGrupoA();
-  const tablaB = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
-
-  const candidatos = [];
-  candidatos.push({ equipo: tablaAFinal[2].equipo, pts: tablaAFinal[2].pts + 1, dif: tablaAFinal[2].dif, gf: tablaAFinal[2].gf });
-  [tablaB[2], tablaB[3]].forEach(e => {
-    const gano = gano3raRondaEquipoB(e.equipo);
-    candidatos.push({ equipo: e.equipo, pts: e.pts + (gano ? 1 : 0), dif: e.dif, gf: e.gf });
-  });
-  candidatos.sort((a, b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
-  dH.quintoPuesto = candidatos[0].equipo;
-
-  guardarEstado();
-  renderizarFinalYPuestosFutbol();
-}
-
-function actualizarMarcadorFinal(campo, valor){
-  const dH = disciplinas.hombres;
-  dH.final[campo] = valor;
-  if(typeof dH.final.golesLocal === 'number' && typeof dH.final.golesVisitante === 'number'){
-    if(dH.final.golesLocal === dH.final.golesVisitante){
-      alert('No puede haber empate.');
-      dH.final.golesLocal = null; dH.final.golesVisitante = null; dH.final.ganador = null;
-    } else {
-      dH.final.ganador = dH.final.golesLocal > dH.final.golesVisitante ? dH.final.local : dH.final.visitante;
-    }
-  } else { dH.final.ganador = null; }
-  guardarEstado();
-  renderizarFinalYPuestosFutbol();
-}
-
-function renderizarFinalYPuestosFutbol(){
-  const cont = document.getElementById('final-puestos-futbol');
-  if(!cont) return;
-  cont.innerHTML = '';
-  const dH = disciplinas.hombres;
-  if(!dH.final){ cont.innerHTML = '<p class="add-note">Aún no se ha generado la Final.</p>'; return; }
-
-  const soloLectura = !esOrganizador();
-  let html = '<table><tr><th>Puesto</th><th>Detalle</th></tr>';
-  html += '<tr><td>FINAL (1ro/2do)</td><td>' + dH.final.local +
-    ' <input type="number" min="0" id="final-golesLocal" style="width:36px;" value="' + (dH.final.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> - ' +
-    '<input type="number" min="0" id="final-golesVisitante" style="width:36px;" value="' + (dH.final.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> ' + dH.final.visitante +
-    (dH.final.ganador ? ' 🏆 ' + dH.final.ganador : '') + '</td></tr>';
-  html += '<tr><td>3er puesto</td><td>' + (dH.tercerPuesto || '—') + '</td></tr>';
-  html += '<tr><td>4to puesto</td><td>' + (dH.cuartoPuesto || '—') + '</td></tr>';
-  html += '<tr><td>5to puesto</td><td>' + (dH.quintoPuesto || '—') + '</td></tr>';
-  html += '</table>';
-  cont.innerHTML = html;
-
-  const inputLocal = document.getElementById('final-golesLocal');
-  const inputVisitante = document.getElementById('final-golesVisitante');
-  if(inputLocal) inputLocal.addEventListener('change', (e) => actualizarMarcadorFinal('golesLocal', e.target.value === '' ? null : Number(e.target.value)));
-  if(inputVisitante) inputVisitante.addEventListener('change', (e) => actualizarMarcadorFinal('golesVisitante', e.target.value === '' ? null : Number(e.target.value)));
-}
-
-function renderizarGrupos(){
-  const d = disciplinas[disciplinaActual];
-  const esBasquet = (disciplinaActual === 'basquet');
-  const esVoley = (disciplinaActual === 'voley');
-  const esFutbol = (disciplinaActual === 'hombres' || disciplinaActual === 'mujeres');
-
-  document.getElementById('contenedor-grupos-futbol').style.display = esFutbol ? '' : 'none';
-  document.getElementById('contenedor-grupos-basquet').style.display = esBasquet ? '' : 'none';
-  document.getElementById('contenedor-grupos-voley').style.display = esVoley ? '' : 'none';
-
-  if(esBasquet){
-    document.querySelector('#contenedor-grupos-basquet h1').textContent = 'Grupos generados — ' + d.titulo;
-    renderizarGruposBasquet();
-    renderizarCalendarioBasquet();
-    return;
-  }
-
-  if(esVoley){
-    document.querySelector('#contenedor-grupos-voley h1').textContent = 'Grupos generados — ' + d.titulo;
-    const cont = document.getElementById('voley-grupos-container');
-    cont.innerHTML = '';
-    cont.style.gridTemplateColumns = 'repeat(' + d.numGrupos + ', 1fr)';
-    d.grupos.forEach((equiposDelGrupo, idx) => {
-      const box = document.createElement('div');
-      box.className = 'grupo-box';
-      let html = `<h3>GRUPO ${idx + 1}</h3><ul>`;
-      if(equiposDelGrupo.length === 0){
-        html += '<li style="font-style:italic;color:#aab3bb;">— sin equipos —</li>';
-      } else {
-        equiposDelGrupo.forEach((nombre, pos) => { html += `<li><b>${pos + 1}</b> ${nombre}</li>`; });
-      }
-      html += '</ul>';
-      box.innerHTML = html;
-      cont.appendChild(box);
-    });
-    renderizarCalendarioVoley();
-    renderizarSemifinalVoley();
-    renderizarFinalVoley();
-    return;
-  }
-
-  document.querySelector('#s2 h1').textContent = 'Grupos generados — ' + d.titulo;
-
-  const cont = document.querySelector('#contenedor-grupos-futbol .grupos');
-  cont.innerHTML = '';
-  cont.style.gridTemplateColumns = 'repeat(' + d.numGrupos + ', 1fr)';
-
-  d.grupos.forEach((equiposDelGrupo, idx) => {
-    const box = document.createElement('div');
-    box.className = 'grupo-box';
-    let html = '<h3>GRUPO ' + (idx + 1) + '</h3><ul>';
-    if(equiposDelGrupo.length === 0){
-      html += '<li style="font-style:italic;color:#aab3bb;">— sin equipos —</li>';
-    } else {
-      equiposDelGrupo.forEach((nombre, pos) => { html += '<li><b>' + (pos + 1) + '</b> ' + nombre + '</li>'; });
-    }
-    html += '</ul>';
-    box.innerHTML = html;
-    cont.appendChild(box);
-  });
-}
-
-function renderizarGruposBasquet(){
-  const d = disciplinas.basquet;
-  const g1 = document.getElementById('basquet-g1');
-  const g2 = document.getElementById('basquet-g2');
-  g1.innerHTML = '';
-  g2.innerHTML = '';
-
-  if(!d.rondaUno){
-    g1.innerHTML = '<li style="font-style:italic;color:#aab3bb;">— sin llaves generadas —</li>';
-    g2.innerHTML = '<li style="font-style:italic;color:#aab3bb;">— sin llaves generadas —</li>';
-    return;
-  }
-
-  const armarLi = (p) => `<li><b>${p.llave.split(' ')[1]}</b>: ${p.local} vs ${p.visitante}</li>`;
-  g1.innerHTML = armarLi(d.rondaUno[0]) + armarLi(d.rondaUno[1]);
-  g2.innerHTML = armarLi(d.rondaUno[2]) + armarLi(d.rondaUno[3]);
-}
-
-function renderizarCalendarioBasquet(){
-  const cont = document.getElementById('calendario-basquet');
-  if(!cont) return;
-  const d = disciplinas.basquet;
-  
-  if(!d.rondaUno){
-    cont.innerHTML = '<p class="add-note">Genera la Ronda 1 en "2. Sorteo" para ver el calendario dinámico.</p>';
-    return;
-  }
-
-  let html = '<table><tr><th>Hora</th><th>Partido / Instancia</th></tr>';
-  let hora = horaATotalMinutos('09:00'); 
-
-  const agregarFila = (texto) => {
-    html += `<tr><td>${minutosAHora(hora)} - ${minutosAHora(hora+45)}</td><td>${texto}</td></tr>`;
-    hora += 50; 
-  };
-
-  d.rondaUno.forEach(p => agregarFila(`<b>${p.llave.split(' ')[0]} ${p.llave.split(' ')[1]}</b>: ${p.local} vs ${p.visitante}`));
-  
-  if(d.perdedoresBasquet){
-    d.perdedoresBasquet.forEach((p,i) => agregarFila(`<b>Llave Perdedores G${i+1}</b>: ${p.local} vs ${p.visitante}`));
-  } else {
-    agregarFila('Llave de Perdedores Grupo 1 (por definir)');
-    agregarFila('Llave de Perdedores Grupo 2 (por definir)');
-  }
-
-  if(d.semifinalesBasquet){
-    d.semifinalesBasquet.forEach((p,i) => agregarFila(`<b>Semifinal Grupo ${i+1}</b>: ${p.local} vs ${p.visitante}`));
-  } else {
-    agregarFila('Semifinal Grupo 1 (por definir)');
-    agregarFila('Semifinal Grupo 2 (por definir)');
-  }
-
-  if(d.finalBasquet){
-    agregarFila(`<b>Final</b>: ${d.finalBasquet.local} vs ${d.finalBasquet.visitante}`);
-  } else {
-    agregarFila('Final (por definir)');
-  }
-
-  html += '</table>';
-  cont.innerHTML = html;
-}
-
-// ----- ECUAVOLEY CALENDAR & FINALS -----
-
-function generarCalendarioVoley(){
-  const d = disciplinas.voley;
-  if(!d.grupos || d.grupos.length !== 2){ alert('Ecuavoley requiere exactamente 2 grupos.'); return; }
-  if(!d.partidos) generarPartidos(); // Genera d.partidos[0] y [1] con 6 partidos c/u
-
-  d.calendarioVoley = [];
-  let c = 1;
-  for(let i=0; i<6; i++){
-    d.calendarioVoley.push({ grupo: 0, pIdx: i, cancha: c, ini: null, fin: null });
-    c = c === 3 ? 1 : c + 1;
-    d.calendarioVoley.push({ grupo: 1, pIdx: i, cancha: c, ini: null, fin: null });
-    c = c === 3 ? 1 : c + 1;
-  }
-  guardarEstado();
-  renderizarCalendarioVoley();
-}
-
-function registrarTiempoVoley(idx, tipo){
-  const d = disciplinas.voley;
-  const p = d.calendarioVoley[idx];
-  const ahora = new Date();
-  const str = ahora.getHours().toString().padStart(2,'0') + ':' + ahora.getMinutes().toString().padStart(2,'0');
-  p[tipo] = str;
-  guardarEstado();
-  renderizarCalendarioVoley();
-}
-
-function renderizarCalendarioVoley(){
-  const cont = document.getElementById('calendario-voley');
-  if(!cont) return;
-  const d = disciplinas.voley;
-  if(!d.calendarioVoley){ cont.innerHTML = '<p class="add-note">Aún no se ha generado el calendario. Haz clic en el botón superior.</p>'; return; }
 
   let html = '';
-  const soloLectura = !esOrganizador();
-
-  for(let c=1; c<=3; c++){
-    const parts = d.calendarioVoley.map((cal, i) => ({cal, i})).filter(x => x.cal.cancha === c);
-    html += `<div style="flex:1; min-width:250px; border:1px solid var(--linea); padding:8px; border-radius:6px; background:var(--azul-profundo);">
-      <h4 style="margin-top:0; color:var(--oro);">Cancha ${c}</h4>`;
-    parts.forEach(x => {
-      const partido = d.partidos[x.cal.grupo][x.cal.pIdx];
-      html += `<div style="font-size:13px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed var(--linea);">
-        <b style="color:var(--azul-cielo);">G${x.cal.grupo+1}</b>: ${partido.local} vs ${partido.visitante}<br>
-        <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">`;
-      if(!soloLectura){
-        html += `<button class="btn" style="font-size:10px; padding:3px 6px;" onclick="registrarTiempoVoley(${x.i}, 'ini')">▶️ Iniciar</button>
-                 <button class="btn" style="font-size:10px; padding:3px 6px; background:var(--rojo-tab);" onclick="registrarTiempoVoley(${x.i}, 'fin')">🏁 Terminar</button>`;
-      }
-      html += `<span style="color:var(--hueso); font-size:11px;">Ini: <b>${x.cal.ini || '--:--'}</b> | Fin: <b>${x.cal.fin || '--:--'}</b></span>
-        </div></div>`;
-    });
-    html += `</div>`;
+  if(!soloLectura){
+    html += '<div class="btn-row" style="margin-bottom:10px;"><button class="btn" onclick="rehacerFutbolFijo()" style="background:var(--rojo-tab);">🔄 Rehacer todo</button></div>';
   }
-  cont.innerHTML = html;
-}
 
-function generarSemifinalVoley(){
-  const d = disciplinas.voley;
-  if(!d.partidos || d.partidos.flat().some(p => typeof p.golesLocal !== 'number')){
-    alert('Faltan resultados en la fase de grupos (ingrésalos en la pantalla "4. Tabla posiciones").'); return;
-  }
-  const tA = calcularTabla(d.grupos[0], d.partidos[0]);
-  const tB = calcularTabla(d.grupos[1], d.partidos[1]);
-  d.semifinal = [
-    { local: tA[0].equipo, visitante: tB[1].equipo, golesLocal: null, golesVisitante: null, ganador: null },
-    { local: tB[0].equipo, visitante: tA[1].equipo, golesLocal: null, golesVisitante: null, ganador: null }
-  ];
-  guardarEstado();
-  renderizarSemifinalVoley();
-}
-
-function actualizarMarcadorSemiVoley(idx, campo, valor){
-  const d = disciplinas.voley;
-  const p = d.semifinal[idx];
-  p[campo] = valor;
-  if(typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number'){
-    if(p.golesLocal === p.golesVisitante){
-      alert('Sin empates en Semifinal.'); p.golesLocal = null; p.golesVisitante = null; p.ganador = null;
-    } else {
-      p.ganador = p.golesLocal > p.golesVisitante ? p.local : p.visitante;
-    }
-  } else p.ganador = null;
-  guardarEstado(); renderizarSemifinalVoley();
-}
-
-function renderizarSemifinalVoley(){
-  const cont = document.getElementById('semifinal-voley');
-  if(!cont) return;
-  const d = disciplinas.voley;
-  if(!d.semifinal){ cont.innerHTML = '<p class="add-note">Aún no se ha generado la Semifinal.</p>'; return; }
-  const soloLectura = !esOrganizador();
-  let html = '<table><tr><th>Semifinal</th><th>Local</th><th>Sets/Pts</th><th>Visitante</th><th>Ganador</th></tr>';
-  d.semifinal.forEach((p, idx) => {
-    html += `<tr><td>SF${idx+1}</td><td>${p.local}</td>
-      <td><input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorSemiVoley(${idx}, 'golesLocal', this.value===''?null:Number(this.value))" ${soloLectura?'disabled':''}> -
-      <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorSemiVoley(${idx}, 'golesVisitante', this.value===''?null:Number(this.value))" ${soloLectura?'disabled':''}></td>
-      <td>${p.visitante}</td><td>${p.ganador||'—'}</td></tr>`;
+  html += '<b>Partidos (fijos, confirmados)</b><table><tr><th>Local</th><th>Marcador</th><th>Visitante</th></tr>';
+  dH.partidosFijos.forEach((p, idx) => {
+    html += `<tr><td>${p.local}</td><td>
+      <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorFutbolFijo(${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorFutbolFijo(${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
+      </td><td>${p.visitante}</td></tr>`;
   });
-  cont.innerHTML = html + '</table>';
-}
+  html += '</table>';
 
-function generarFinalVoley(){
-  const d = disciplinas.voley;
-  if(!d.semifinal || d.semifinal.some(p => !p.ganador)){ alert('Completa los marcadores de las Semifinales primero.'); return; }
-  const ganadores = d.semifinal.map(p => p.ganador);
-  const perdedores = d.semifinal.map(x => x.ganador === x.local ? x.visitante : x.local);
-  
-  d.final = { local: ganadores[0], visitante: ganadores[1], golesLocal: null, golesVisitante: null, ganador: null };
-  
-  const dif = (pt) => Math.abs(pt.golesLocal - pt.golesVisitante);
-  const perdTabla = [
-    { equipo: perdedores[0], dif: dif(d.semifinal[0]) },
-    { equipo: perdedores[1], dif: dif(d.semifinal[1]) }
-  ].sort((a,b) => b.dif - a.dif);
-  
-  d.tercerPuesto = perdTabla[0].equipo;
-  d.cuartoPuesto = perdTabla[1].equipo;
+  const tabla = calcularTablaFutbolFija();
+  html += '<b style="display:block;margin-top:14px;">Tabla general</b><table><tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>';
+  tabla.forEach((e, pos) => {
+    html += `<tr ${pos<4?'class="top3"':''}><td>${pos+1}</td><td>${e.equipo}</td><td>${e.pj}</td><td>${e.pg}</td><td>${e.pe}</td><td>${e.pp}</td><td>${e.dif>0?'+':''}${e.dif}</td><td>${e.pts}</td></tr>`;
+  });
+  html += '</table><p class="add-note" style="font-size:11px;">Top 4 clasifican a Semifinal (1ro vs 4to, 2do vs 3ro). 5to, 6to, 7mo quedan definidos por esta tabla.</p>';
 
-  guardarEstado(); renderizarFinalVoley();
-}
+  if(!dH.semifinalFutbolFija && !soloLectura){
+    html += '<div class="btn-row" style="margin-top:14px;"><button class="btn oro" onclick="generarSemifinalFutbolFija()">🏆 Generar Semifinal (Top 4)</button></div>';
+  }
+  if(dH.semifinalFutbolFija){
+    html += '<b style="display:block;margin-top:14px;">Semifinal</b><table><tr><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
+    dH.semifinalFutbolFija.forEach((p, idx) => {
+      html += `<tr><td>${p.local}</td><td>
+        <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorSemifinalFutbolFija(${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+        <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorSemifinalFutbolFija(${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
+        </td><td>${p.visitante}</td><td>${p.ganador || '—'}</td></tr>`;
+    });
+    html += '</table>';
+  }
 
-function actualizarMarcadorFinalVoley(campo, valor){
-  const d = disciplinas.voley;
-  d.final[campo] = valor;
-  if(typeof d.final.golesLocal === 'number' && typeof d.final.golesVisitante === 'number'){
-    if(d.final.golesLocal === d.final.golesVisitante){ alert('Sin empates en la Final.'); d.final.golesLocal=null; d.final.golesVisitante=null; d.final.ganador=null; }
-    else d.final.ganador = d.final.golesLocal > d.final.golesVisitante ? d.final.local : d.final.visitante;
-  } else d.final.ganador = null;
-  guardarEstado(); renderizarFinalVoley();
-}
+  if(dH.semifinalFutbolFija && dH.semifinalFutbolFija.every(p=>p.ganador) && !dH.finalFutbolFija && !soloLectura){
+    html += '<div class="btn-row" style="margin-top:14px;"><button class="btn oro" onclick="generarFinalFutbolFija()">🥇 Generar Final y Puestos</button></div>';
+  }
 
-function renderizarFinalVoley(){
-  const cont = document.getElementById('final-puestos-voley');
-  if(!cont) return;
-  const d = disciplinas.voley;
-  if(!d.final){ cont.innerHTML = '<p class="add-note">Aún no se ha generado la Final.</p>'; return; }
-  const soloLectura = !esOrganizador();
-  const f = d.final;
-  cont.innerHTML = `<table>
-    <tr><th>Puesto</th><th>Detalle</th></tr>
-    <tr><td>FINAL (1ro/2do)</td><td>${f.local} <input type="number" style="width:36px;" value="${f.golesLocal??''}" onchange="actualizarMarcadorFinalVoley('golesLocal', this.value===''?null:Number(this.value))" ${soloLectura?'disabled':''}> -
-    <input type="number" style="width:36px;" value="${f.golesVisitante??''}" onchange="actualizarMarcadorFinalVoley('golesVisitante', this.value===''?null:Number(this.value))" ${soloLectura?'disabled':''}> ${f.visitante} ${f.ganador?'🏆 '+f.ganador:''}</td></tr>
-    <tr><td>3er Puesto</td><td>${d.tercerPuesto || '—'} (Perdedor de Semifinales con mayor dif. pts)</td></tr>
-    <tr><td>4to Puesto</td><td>${d.cuartoPuesto || '—'} (Perdedor de Semifinales con menor dif. pts)</td></tr>
-  </table>`;
+  if(dH.finalFutbolFija){
+    const f = dH.finalFutbolFija;
+    html += '<b style="display:block;margin-top:14px;">Final y puestos</b><table><tr><th>Puesto</th><th>Detalle</th></tr>';
+    html += `<tr><td>FINAL (1ro/2do)</td><td>${f.local}
+      <input type="number" style="width:36px;" value="${f.golesLocal ?? ''}" onchange="actualizarMarcadorFinalFutbolFija('golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" style="width:36px;" value="${f.golesVisitante ?? ''}" onchange="actualizarMarcadorFinalFutbolFija('golesVisitante', this.value)" ${soloLectura?'disabled':''}> ${f.visitante}${f.ganador?' 🏆 '+f.ganador:''}</td></tr>`;
+    html += `<tr><td>3er puesto</td><td>${dH.tercerPuestoFijo || '—'}</td></tr>`;
+    html += `<tr><td>4to puesto</td><td>${dH.cuartoPuestoFijo || '—'}</td></tr>`;
+    html += `<tr><td>5to puesto</td><td>${dH.quintoPuestoFijo || '—'}</td></tr>`;
+    html += `<tr><td>6to puesto</td><td>${dH.sextoPuestoFijo || '—'}</td></tr>`;
+    html += `<tr><td>7mo puesto</td><td>${dH.septimoPuestoFijo || '—'}</td></tr>`;
+    html += '</table>';
+  }
+
+  cont.innerHTML = html;
 }
 
 function generarCombinaciones(equipos){
@@ -1416,6 +934,7 @@ function generarCombinaciones(equipos){
 
 function generarPartidos(){
   const d = disciplinas[disciplinaActual];
+  if(!d.grupos) return;
   const partidosPrevios = d.partidos || [];
   d.partidos = d.grupos.map((equiposDelGrupo, idxGrupo) => {
     const nuevos = generarCombinaciones(equiposDelGrupo);
@@ -1450,12 +969,84 @@ function calcularTabla(equiposDelGrupo, partidosDelGrupo){
   return tabla;
 }
 
+function siguientePotenciaDeDos(n){ let p = 1; while(p < n) p *= 2; return p; }
+function ordenSiembra(n){
+  if(n === 1) return [1];
+  const prev = ordenSiembra(n / 2);
+  const resultado = [];
+  prev.forEach(s => { resultado.push(s); resultado.push(n + 1 - s); });
+  return resultado;
+}
+
+let grupoTablaActual = 0;
+
+function renderizarTabla(){
+  const d = disciplinas[disciplinaActual];
+  if(!d.partidos) return;
+
+  document.getElementById('titulo-tabla-normal').textContent = 'Partidos y tabla de posiciones — Grupo ' + (grupoTablaActual + 1);
+
+  const selectorCont = document.getElementById('selector-grupo-tabla');
+  selectorCont.innerHTML = '';
+  if(d.numGrupos > 1){
+    d.grupos.forEach((_, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (idx === grupoTablaActual ? ' oro' : '');
+      btn.textContent = 'Grupo ' + (idx + 1);
+      btn.onclick = () => { grupoTablaActual = idx; renderizarTabla(); };
+      selectorCont.appendChild(btn);
+    });
+  }
+
+  const equiposDelGrupo = d.grupos[grupoTablaActual];
+  const partidosDelGrupo = d.partidos[grupoTablaActual];
+  const contPartidos = document.getElementById('partidos-grupo');
+  contPartidos.innerHTML = '';
+  partidosDelGrupo.forEach((p, idx) => {
+    const jugado = typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number';
+    const fila = document.createElement('tr');
+    const soloLectura = !esOrganizador();
+    fila.innerHTML =
+      '<td>' + p.local + '</td>' +
+      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesLocal ?? '') + '" data-idx="' + idx + '" data-campo="golesLocal"' + (soloLectura ? ' disabled' : '') + '></td>' +
+      '<td>vs</td>' +
+      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesVisitante ?? '') + '" data-idx="' + idx + '" data-campo="golesVisitante"' + (soloLectura ? ' disabled' : '') + '></td>' +
+      '<td>' + p.visitante + '</td>' +
+      '<td><span class="pill" style="' + (jugado ? '' : 'background:var(--linea);color:#555') + '">' + (jugado ? 'Finalizado' : 'Pendiente') + '</span></td>';
+    contPartidos.appendChild(fila);
+  });
+
+  contPartidos.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      if(!esOrganizador()) return;
+      const idx = Number(e.target.dataset.idx);
+      const campo = e.target.dataset.campo;
+      const d2 = disciplinas[disciplinaActual];
+      if(!d2.partidos || !d2.partidos[grupoTablaActual]) return;
+      d2.partidos[grupoTablaActual][idx][campo] = e.target.value === '' ? null : Number(e.target.value);
+      guardarEstado();
+      renderizarTabla();
+    });
+  });
+
+  const tabla = calcularTabla(equiposDelGrupo, partidosDelGrupo);
+  const contTabla = document.getElementById('tabla-posiciones');
+  contTabla.innerHTML = '<tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>';
+  tabla.forEach((e, pos) => {
+    const esTop = pos < 2;
+    contTabla.innerHTML +=
+      '<tr' + (esTop ? ' class="top3"' : '') + '>' +
+      '<td>' + (pos+1) + '</td><td>' + e.equipo + '</td><td>' + e.pj + '</td><td>' + e.pg + '</td>' +
+      '<td>' + e.pe + '</td><td>' + e.pp + '</td><td>' + (e.dif > 0 ? '+' : '') + e.dif + '</td><td>' + e.pts + '</td></tr>';
+  });
+}
+
 function obtenerClasificados(numPorGrupo = 2){
   const d = disciplinas[disciplinaActual];
   const numGrupos = d.grupos.length;
   let candidatosTodos = [];
   d.grupos.forEach((equiposDelGrupo, idxGrupo) => {
-    const partidosDelGrupo = d.partidos[idxGrupo];
+    const partidosDelGrupo = (d.partidos && d.partidos[idxGrupo]) || [];
     const tabla = calcularTabla(equiposDelGrupo, partidosDelGrupo);
     tabla.forEach((e, pos) => { candidatosTodos.push({ equipo: e.equipo, posGrupo: pos + 1, grupoIdx: idxGrupo, pts: e.pts, dif: e.dif, gf: e.gf }); });
   });
@@ -1477,15 +1068,6 @@ function obtenerClasificados(numPorGrupo = 2){
   }
   clasificados.sort((a, b) => a.posGrupo - b.posGrupo || b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
   return clasificados;
-}
-
-function siguientePotenciaDeDos(n){ let p = 1; while(p < n) p *= 2; return p; }
-function ordenSiembra(n){
-  if(n === 1) return [1];
-  const prev = ordenSiembra(n / 2);
-  const resultado = [];
-  prev.forEach(s => { resultado.push(s); resultado.push(n + 1 - s); });
-  return resultado;
 }
 
 function armarCrucesSinRepetirGrupo(clasificados){
@@ -1640,72 +1222,217 @@ function renderizarBracket(){
   });
 }
 
-let grupoTablaActual = 0;
-
-function renderizarTabla(){
+function renderizarGrupos(){
   const d = disciplinas[disciplinaActual];
-  if(!d.partidos) return;
+  const esBasquet = (disciplinaActual === 'basquet');
+  const esVoley = (disciplinaActual === 'voley');
+  const esHombres = (disciplinaActual === 'hombres');
+  const esFutbolNormal = (disciplinaActual === 'mujeres');
 
-  document.getElementById('titulo-tabla-normal').textContent = 'Partidos y tabla de posiciones — Grupo ' + (grupoTablaActual + 1);
+  document.getElementById('contenedor-grupos-futbol').style.display = esFutbolNormal ? '' : 'none';
+  document.getElementById('contenedor-futbol-fijo').style.display = esHombres ? '' : 'none';
+  document.getElementById('contenedor-grupos-basquet').style.display = esBasquet ? '' : 'none';
+  document.getElementById('contenedor-grupos-voley').style.display = esVoley ? '' : 'none';
 
-  const selectorCont = document.getElementById('selector-grupo-tabla');
-  selectorCont.innerHTML = '';
-  if(d.numGrupos > 1){
-    d.grupos.forEach((_, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'btn' + (idx === grupoTablaActual ? ' oro' : '');
-      btn.textContent = 'Grupo ' + (idx + 1);
-      btn.onclick = () => { grupoTablaActual = idx; renderizarTabla(); };
-      selectorCont.appendChild(btn);
-    });
+  if(esHombres){ renderizarFutbolFijo(); return; }
+  if(esBasquet){ renderizarGruposBasquet(); return; }
+  if(esVoley){ renderizarEliminacionVoley(); return; }
+
+  document.querySelector('#s2 h1').textContent = 'Grupos generados — ' + d.titulo;
+
+  const cont = document.querySelector('#contenedor-grupos-futbol .grupos');
+  cont.innerHTML = '';
+  cont.style.gridTemplateColumns = 'repeat(' + d.numGrupos + ', 1fr)';
+
+  d.grupos.forEach((equiposDelGrupo, idx) => {
+    const box = document.createElement('div');
+    box.className = 'grupo-box';
+    let html = '<h3>GRUPO ' + (idx + 1) + '</h3><ul>';
+    if(equiposDelGrupo.length === 0){
+      html += '<li style="font-style:italic;color:#aab3bb;">— sin equipos —</li>';
+    } else {
+      equiposDelGrupo.forEach((nombre, pos) => { html += '<li><b>' + (pos + 1) + '</b> ' + nombre + '</li>'; });
+    }
+    html += '</ul>';
+    box.innerHTML = html;
+    cont.appendChild(box);
+  });
+}
+
+// ===== BÁSQUET — CUARTOS FIJOS (8 equipos, sin validación de género) =====
+
+function generarRondaUnoBasquet(){
+  const d = disciplinas.basquet;
+  d.rondaUno = BASQUET_QF_FIJOS.map(p => ({ local: p.local, visitante: p.visitante, golesLocal: null, golesVisitante: null, ganador: null, llave: p.llave }));
+  d.semifinalesBasquet = undefined;
+  d.perdedoresBasquet = undefined;
+  d.finalBasquet = undefined;
+  d.tercerPuestoBasquet = undefined;
+  d.cuartoPuestoBasquet = undefined;
+  d.quintoPuestoBasquet = undefined;
+  guardarEstado();
+  renderizarGruposBasquet();
+  renderizarMarcadoresBasquet();
+}
+
+function rehacerCuartosBasquet(){
+  if(!confirm('¿Rehacer los Cuartos de Básquet? Se perderán semis, final y puestos.')) return;
+  generarRondaUnoBasquet();
+}
+
+function renderizarGruposBasquet(){
+  const d = disciplinas.basquet;
+  const cont = document.getElementById('basquet-cuartos-contenedor');
+  if(!cont) return;
+  const soloLectura = !esOrganizador();
+
+  if(!d.rondaUno){
+    let html = '<p class="add-note">Cuartos de Final fijos (confirmados):</p><ul>';
+    BASQUET_QF_FIJOS.forEach(p => { html += `<li>${p.llave}: ${p.local} vs ${p.visitante}</li>`; });
+    html += '</ul>';
+    if(!soloLectura) html += '<div class="btn-row"><button class="btn oro" onclick="generarRondaUnoBasquet()">🏀 Generar Cuartos</button></div>';
+    cont.innerHTML = html;
+    return;
   }
 
-  const equiposDelGrupo = d.grupos[grupoTablaActual];
-  const partidosDelGrupo = d.partidos[grupoTablaActual];
-  const contPartidos = document.getElementById('partidos-grupo');
-  contPartidos.innerHTML = '';
-  partidosDelGrupo.forEach((p, idx) => {
-    const jugado = typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number';
-    const fila = document.createElement('tr');
-    const soloLectura = !esOrganizador();
-    fila.innerHTML =
-      '<td>' + p.local + '</td>' +
-      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesLocal ?? '') + '" data-idx="' + idx + '" data-campo="golesLocal"' + (soloLectura ? ' disabled' : '') + '></td>' +
-      '<td>vs</td>' +
-      '<td><input type="number" min="0" style="width:40px" value="' + (p.golesVisitante ?? '') + '" data-idx="' + idx + '" data-campo="golesVisitante"' + (soloLectura ? ' disabled' : '') + '></td>' +
-      '<td>' + p.visitante + '</td>' +
-      '<td><span class="pill" style="' + (jugado ? '' : 'background:var(--linea);color:#555') + '">' + (jugado ? 'Finalizado' : 'Pendiente') + '</span></td>';
-    contPartidos.appendChild(fila);
-  });
+  let html = '';
+  if(esOrganizador()) html += '<div class="btn-row" style="margin-bottom:10px;"><button class="btn" onclick="rehacerCuartosBasquet()" style="background:var(--rojo-tab);">🔄 Rehacer Cuartos</button></div>';
+  html += '<b>Cuartos de Final</b><table><tr><th>Llave</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
 
-  contPartidos.querySelectorAll('input').forEach(input => {
-    input.addEventListener('change', (e) => {
-      if(!esOrganizador()) return;
-      const idx = Number(e.target.dataset.idx);
-      const campo = e.target.dataset.campo;
-      d.partidos[grupoTablaActual][idx][campo] = e.target.value === '' ? null : Number(e.target.value);
-      guardarEstado();
-      renderizarTabla();
-    });
+  d.rondaUno.forEach((p, idx) => {
+    html += `<tr><td>${p.llave}</td><td>${p.local}</td><td>
+      <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorBasquet('rondaUno', ${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorBasquet('rondaUno', ${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
+      </td><td>${p.visitante}</td><td>${p.ganador || '—'}</td></tr>`;
   });
+  html += '</table>';
+  cont.innerHTML = html;
+}
 
-  const tabla = calcularTabla(equiposDelGrupo, partidosDelGrupo);
-  const contTabla = document.getElementById('tabla-posiciones');
-  contTabla.innerHTML = '<tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>Dif</th><th>Pts</th></tr>';
-  tabla.forEach((e, pos) => {
-    const esTop = pos < 2;
-    contTabla.innerHTML +=
-      '<tr' + (esTop ? ' class="top3"' : '') + '>' +
-      '<td>' + (pos+1) + '</td><td>' + e.equipo + '</td><td>' + e.pj + '</td><td>' + e.pg + '</td>' +
-      '<td>' + e.pe + '</td><td>' + e.pp + '</td><td>' + (e.dif > 0 ? '+' : '') + e.dif + '</td><td>' + e.pts + '</td></tr>';
-  });
-
-  const cardTerceraRonda = document.getElementById('card-tercera-ronda-grupoA');
-  if(cardTerceraRonda){
-    const esGrupoChicoDeFutbol = (disciplinaActual === 'hombres' && equiposDelGrupo.length === 3);
-    cardTerceraRonda.style.display = esGrupoChicoDeFutbol ? '' : 'none';
-    if(esGrupoChicoDeFutbol) renderizarTerceraRondaGrupoA();
+function generarFaseDosBasquet(){
+  const d = disciplinas.basquet;
+  if(!d.rondaUno || d.rondaUno.some(p => !p.ganador)){
+    alert("Completa todos los marcadores de Cuartos primero.");
+    return;
   }
+
+  const p1 = d.rondaUno[0], p2 = d.rondaUno[1], p3 = d.rondaUno[2], p4 = d.rondaUno[3];
+  const perdedor = (p) => p.ganador === p.local ? p.visitante : p.local;
+
+  d.semifinalesBasquet = [
+    { local: p1.ganador, visitante: p2.ganador, golesLocal: null, golesVisitante: null, ganador: null, llave: 'Semifinal 1' },
+    { local: p3.ganador, visitante: p4.ganador, golesLocal: null, golesVisitante: null, ganador: null, llave: 'Semifinal 2' }
+  ];
+  d.perdedoresBasquet = [
+    { local: perdedor(p1), visitante: perdedor(p2), golesLocal: null, golesVisitante: null, ganador: null, llave: 'Llave Perdedores 1' },
+    { local: perdedor(p3), visitante: perdedor(p4), golesLocal: null, golesVisitante: null, ganador: null, llave: 'Llave Perdedores 2' }
+  ];
+  guardarEstado();
+  renderizarMarcadoresBasquet();
+}
+
+function generarFinalBasquet(){
+  const d = disciplinas.basquet;
+  if(!d.semifinalesBasquet || d.semifinalesBasquet.some(p => !p.ganador)){
+    alert("Completa todos los marcadores de Semifinales primero."); return;
+  }
+  if(!d.perdedoresBasquet || d.perdedoresBasquet.some(p => !p.ganador)){
+    alert("Completa todos los marcadores de Llave de Perdedores primero."); return;
+  }
+
+  const sf1 = d.semifinalesBasquet[0], sf2 = d.semifinalesBasquet[1];
+  d.finalBasquet = { local: sf1.ganador, visitante: sf2.ganador, golesLocal: null, golesVisitante: null, ganador: null };
+
+  const perd = (p) => p.ganador === p.local ? p.visitante : p.local;
+  const dif = (p) => Math.abs(p.golesLocal - p.golesVisitante);
+  const gfPerd = (p) => p.ganador === p.local ? p.golesVisitante : p.golesLocal;
+  const gfGan = (p) => p.ganador === p.local ? p.golesLocal : p.golesVisitante;
+
+  const terceros = [
+    { equipo: perd(sf1), dif: dif(sf1), gf: gfPerd(sf1) },
+    { equipo: perd(sf2), dif: dif(sf2), gf: gfPerd(sf2) }
+  ];
+  terceros.sort((a,b) => b.dif - a.dif || b.gf - a.gf);
+  d.tercerPuestoBasquet = terceros[0].equipo;
+  d.cuartoPuestoBasquet = terceros[1].equipo;
+
+  const quintos = [
+    { equipo: d.perdedoresBasquet[0].ganador, dif: dif(d.perdedoresBasquet[0]), gf: gfGan(d.perdedoresBasquet[0]) },
+    { equipo: d.perdedoresBasquet[1].ganador, dif: dif(d.perdedoresBasquet[1]), gf: gfGan(d.perdedoresBasquet[1]) }
+  ];
+  quintos.sort((a,b) => b.dif - a.dif || b.gf - a.gf);
+  d.quintoPuestoBasquet = quintos[0].equipo;
+
+  guardarEstado();
+  renderizarEliminatoriaBasquet();
+}
+
+function rehacerFinalBasquet(){
+  if(!confirm('¿Seguro que quieres borrar la Final y los puestos de Básquet?')) return;
+  const d = disciplinas.basquet;
+  d.finalBasquet = undefined;
+  d.tercerPuestoBasquet = undefined;
+  d.cuartoPuestoBasquet = undefined;
+  d.quintoPuestoBasquet = undefined;
+  guardarEstado();
+  renderizarEliminatoriaBasquet();
+}
+
+function actualizarMarcadorBasquet(nombreArray, idx, campo, valorStr){
+  const d = disciplinas.basquet;
+  const valor = valorStr === '' ? null : Number(valorStr);
+  const partido = nombreArray === 'finalBasquet' ? d.finalBasquet : d[nombreArray][idx];
+  partido[campo] = valor;
+
+  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
+    if(partido.golesLocal === partido.golesVisitante){
+      alert('No puede haber empate en Básquet. Corrige el marcador.');
+      partido.golesLocal = null; partido.golesVisitante = null; partido.ganador = null;
+    } else {
+      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
+    }
+  } else { partido.ganador = null; }
+
+  guardarEstado();
+  if(nombreArray === 'finalBasquet') renderizarEliminatoriaBasquet();
+  else { renderizarMarcadoresBasquet(); renderizarGruposBasquet(); }
+}
+
+function renderizarMarcadoresBasquet(){
+  const d = disciplinas.basquet;
+  const contFase2 = document.getElementById('marcadores-fase2-basquet');
+  const cardFase2 = document.getElementById('card-fase2-basquet');
+  if(!contFase2 || !cardFase2) return;
+
+  if(!d.rondaUno || d.rondaUno.some(p => !p.ganador)){
+    cardFase2.style.display = 'none';
+    renderizarTablasBasquet();
+    return;
+  }
+  cardFase2.style.display = '';
+
+  const armarTabla = (partidos, nombreArray) => {
+    let html = '<table><tr><th>Llave</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
+    partidos.forEach((p, idx) => {
+      const soloLectura = !esOrganizador();
+      html += `<tr><td>${p.llave}</td><td>${p.local}</td><td>
+        <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorBasquet('${nombreArray}', ${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+        <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorBasquet('${nombreArray}', ${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
+        </td><td>${p.visitante}</td><td>${p.ganador || '—'}</td></tr>`;
+    });
+    return html + '</table>';
+  };
+
+  if(!d.semifinalesBasquet && !esOrganizador()){
+    contFase2.innerHTML = '<p class="add-note">Aún no se ha generado la fase 2.</p>';
+  } else if(!d.semifinalesBasquet){
+    contFase2.innerHTML = '<div class="btn-row"><button class="btn oro" onclick="generarFaseDosBasquet()">🏆 Generar Semis y Perdedores</button></div>';
+  } else {
+    contFase2.innerHTML = '<b>Semifinales (Ganadores)</b><br>' + armarTabla(d.semifinalesBasquet, 'semifinalesBasquet') +
+                          '<br><b>Llave de Perdedores (5to lugar)</b><br>' + armarTabla(d.perdedoresBasquet, 'perdedoresBasquet');
+  }
+
+  renderizarTablasBasquet();
 }
 
 function renderizarTablasBasquet() {
@@ -1751,320 +1478,13 @@ function renderizarTablasBasquet() {
   cont.innerHTML = html;
 }
 
-function rehacerSorteo(){
-  const d = disciplinas[disciplinaActual];
-  if(!confirm('¿Seguro que quieres rehacer el sorteo de "' + d.titulo + '"?\nTodos los equipos volverán a la lista de pendientes.')) return;
-  d.grupos = [];
-  for(let i=0; i<d.numGrupos; i++) d.grupos.push([]);
-  guardarEstado();
-  seleccionarDisciplina(disciplinaActual, false);
-}
-
-function agregarEquipo(){
-  const input = document.getElementById('nuevo-equipo');
-  const nombre = input.value.trim();
-  if(!nombre) return;
-  const d = disciplinas[disciplinaActual];
-  if(d.equipos.includes(nombre)){ alert('Ya existe un equipo con ese nombre.'); return; }
-
-  d.equipos.push(nombre);
-  if(disciplinaActual === 'basquet'){
-    const selectorTipo = document.getElementById('tipo-nuevo-equipo');
-    const tipo = selectorTipo ? selectorTipo.value : 'mixto';
-    if(!d.tiposEquipo) d.tiposEquipo = {};
-    d.tiposEquipo[nombre] = tipo;
-    if(tipo === 'mixto'){
-      if(!d.jugadoresPorEquipo) d.jugadoresPorEquipo = {};
-      d.jugadoresPorEquipo[nombre] = [];
-    }
-  }
-  guardarEstado();
-  seleccionarDisciplina(disciplinaActual, false);
-  input.value = '';
-}
-
-function agregarJugadorMixto(nombreEquipo){
-  const nombreJugador = prompt('Nombre y apellido del jugador/a:');
-  if(!nombreJugador || !nombreJugador.trim()) return;
-  const genero = confirm('¿Es mujer? (Aceptar = Mujer, Cancelar = Hombre)') ? 'mujer' : 'hombre';
-
-  const d = disciplinas.basquet;
-  if(!d.jugadoresPorEquipo) d.jugadoresPorEquipo = {};
-  if(!d.jugadoresPorEquipo[nombreEquipo]) d.jugadoresPorEquipo[nombreEquipo] = [];
-  d.jugadoresPorEquipo[nombreEquipo].push({ nombre: nombreJugador.trim(), genero });
-  guardarEstado();
-  renderizarJugadoresMixtos();
-}
-
-function eliminarJugadorMixto(nombreEquipo, idx){
-  const d = disciplinas.basquet;
-  d.jugadoresPorEquipo[nombreEquipo].splice(idx, 1);
-  guardarEstado();
-  renderizarJugadoresMixtos();
-}
-
-function cambiarTipoEquipoBasquet(nombre, nuevoTipo) {
-  const d = disciplinas.basquet;
-  if (!d.tiposEquipo) d.tiposEquipo = {};
-  d.tiposEquipo[nombre] = nuevoTipo;
-  if (nuevoTipo === 'mixto') {
-    if (!d.jugadoresPorEquipo) d.jugadoresPorEquipo = {};
-    if (!d.jugadoresPorEquipo[nombre]) d.jugadoresPorEquipo[nombre] = [];
-  } else {
-    if (d.jugadoresPorEquipo && d.jugadoresPorEquipo[nombre]) delete d.jugadoresPorEquipo[nombre];
-  }
-  guardarEstado();
-  renderizarEquiposBasquet();
-  renderizarJugadoresMixtos();
-}
-
-function renderizarEquiposBasquet(){
-  const cardEquipos = document.getElementById('card-equipos-basquet');
-  const cont = document.getElementById('lista-equipos-basquet');
-  if(!cardEquipos || !cont) return;
-  if(disciplinaActual !== 'basquet'){ cardEquipos.style.display = 'none'; return; }
-  cardEquipos.style.display = '';
-
-  const d = disciplinas.basquet;
-  const tipos = d.tiposEquipo || {};
-  if(!d.equipos || d.equipos.length === 0){ cont.innerHTML = '<p class="add-note">Aún no hay equipos agregados.</p>'; return; }
-
-  let html = '<ul style="list-style:none;margin:0;padding:0;">';
-  d.equipos.forEach(nombre => {
-    const tipo = tipos[nombre] || 'mixto';
-    html += '<li style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed var(--linea);">';
-    html += '<span style="flex:1;">' + nombre + '</span>';
-    
-    if(esOrganizador()){
-      html += '<select style="padding:4px;font-size:12px;border-radius:4px;" onchange="cambiarTipoEquipoBasquet(\'' + nombre.replace(/'/g, "\\'") + '\', this.value)">';
-      html += '<option value="hombres"' + (tipo === 'hombres' ? ' selected' : '') + '>Hombres</option>';
-      html += '<option value="mixto"' + (tipo === 'mixto' ? ' selected' : '') + '>Mixto</option>';
-      html += '<option value="mujeres"' + (tipo === 'mujeres' ? ' selected' : '') + '>Mujeres</option>';
-      html += '</select>';
-      html += '<button style="font-size:11px;margin-left:8px;" onclick="eliminarEquipoBasquet(\'' + nombre.replace(/'/g, "\\'") + '\')">🗑️</button>';
-    } else {
-      const etiquetasTipo = { hombres: 'Hombres', mixto: 'Mixto', mujeres: 'Mujeres' };
-      const coloresTipo = { hombres: 'var(--azul-cielo)', mixto: 'var(--oro)', mujeres: '#E878B4' };
-      html += '<span style="font-size:10px;background:' + (coloresTipo[tipo] || '#888') + ';color:var(--azul-profundo);padding:2px 8px;border-radius:10px;font-weight:bold;">' + (etiquetasTipo[tipo] || tipo) + '</span>';
-    }
-    html += '</li>';
-  });
-  html += '</ul>';
-  cont.innerHTML = html;
-}
-
-function eliminarEquipoBasquet(nombre){
-  if(!confirm('¿Eliminar el equipo "' + nombre + '"?')) return;
-  const d = disciplinas.basquet;
-  const idx = d.equipos.indexOf(nombre);
-  if(idx !== -1) d.equipos.splice(idx, 1);
-  if(d.tiposEquipo) delete d.tiposEquipo[nombre];
-  if(d.jugadoresPorEquipo) delete d.jugadoresPorEquipo[nombre];
-  guardarEstado();
-  renderizarEquiposBasquet();
-  renderizarJugadoresMixtos();
-}
-
-function renderizarJugadoresMixtos(){
-  const cardJugadores = document.getElementById('card-jugadores-mixtos');
-  const cont = document.getElementById('lista-jugadores-mixtos');
-  if(!cardJugadores || !cont) return;
-  if(disciplinaActual !== 'basquet'){ cardJugadores.style.display = 'none'; return; }
-  cardJugadores.style.display = '';
-
-  const d = disciplinas.basquet;
-  const tipos = d.tiposEquipo || {};
-  const equiposMixtos = d.equipos.filter(nombre => tipos[nombre] === 'mixto');
-  if(equiposMixtos.length === 0){ cont.innerHTML = '<p class="add-note">Aún no hay equipos marcados como Mixto.</p>'; return; }
-
-  let html = '';
-  equiposMixtos.forEach(nombreEquipo => {
-    const jugadores = (d.jugadoresPorEquipo && d.jugadoresPorEquipo[nombreEquipo]) || [];
-    const numMujeres = jugadores.filter(j => j.genero === 'mujer').length;
-    const cumple = numMujeres >= 2;
-
-    html += '<div style="margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--linea);">';
-    html += '<b>' + nombreEquipo + '</b> — <span style="color:' + (cumple ? 'var(--oro-suave)' : 'var(--rojo-tab)') + ';">' + numMujeres + ' mujer(es)' + (cumple ? ' ✔️' : ' ⚠️ faltan mínimo 2') + '</span>';
-    if(esOrganizador()){
-      html += ' <button class="btn" style="font-size:11px;padding:3px 8px;" onclick="agregarJugadorMixto(\'' + nombreEquipo.replace(/'/g, "\\'") + '\')">+ jugador</button>';
-    }
-    html += '<ul style="list-style:none;margin:6px 0 0 0;padding:0;">';
-    jugadores.forEach((j, idx) => {
-      html += '<li style="font-size:12px;padding:3px 0;">' + j.nombre + ' (' + (j.genero === 'mujer' ? 'Mujer' : 'Hombre') + ')';
-      if(esOrganizador()) html += ' <button style="font-size:10px;" onclick="eliminarJugadorMixto(\'' + nombreEquipo.replace(/'/g, "\\'") + '\', ' + idx + ')">🗑️</button>';
-      html += '</li>';
-    });
-    html += '</ul></div>';
-  });
-  cont.innerHTML = html;
-}
-
-function generarRondaUnoBasquet(){
-  const d = disciplinas.basquet;
-  const tipos = d.tiposEquipo || {};
-  const equiposHombres = d.equipos.filter(n => tipos[n] === 'hombres');
-  const equiposMixtos = d.equipos.filter(n => tipos[n] === 'mixto');
-  const equiposMujeres = d.equipos.filter(n => tipos[n] === 'mujeres');
-
-  if(equiposHombres.length !== 3 || equiposMixtos.length !== 4 || equiposMujeres.length !== 1){
-    alert('Necesitas exactamente 3 Hombres, 4 Mixtos y 1 Mujeres.'); return;
-  }
-  const jugadoresPorEquipo = d.jugadoresPorEquipo || {};
-  const mixtosSinCumplir = equiposMixtos.filter(n => {
-    const jugadores = jugadoresPorEquipo[n] || [];
-    return jugadores.filter(j => j.genero === 'mujer').length < 2;
-  });
-  if(mixtosSinCumplir.length > 0){ alert('Mixtos incompletos: ' + mixtosSinCumplir.join(', ')); return; }
-
-  const mixtosMezclados = mezclarAlAzar(equiposMixtos);
-  const hombresMezclados = mezclarAlAzar(equiposHombres);
-
-  d.rondaUno = [
-    { local: hombresMezclados[0], visitante: hombresMezclados[1], golesLocal: null, golesVisitante: null, ganador: null, llave: 'Llave 1 (H-H)' },
-    { local: hombresMezclados[2], visitante: mixtosMezclados[0], golesLocal: null, golesVisitante: null, ganador: null, llave: 'Llave 2 (H-M)' },
-    { local: equiposMujeres[0], visitante: mixtosMezclados[1], golesLocal: null, golesVisitante: null, ganador: null, llave: 'Llave 3 (F-M)' },
-    { local: mixtosMezclados[2], visitante: mixtosMezclados[3], golesLocal: null, golesVisitante: null, ganador: null, llave: 'Llave 4 (M-M)' }
-  ];
-  guardarEstado();
-  alert('Ronda 1 generada con éxito. Revisa el calendario en la pestaña "3. Grupos".');
-  ir(2);
-}
-
-function generarFaseDosBasquet(){
-  const d = disciplinas.basquet;
-  if(!d.rondaUno || d.rondaUno.some(p => !p.ganador)){
-    alert("Completa todos los marcadores de la Ronda 1 primero.");
-    return;
-  }
-
-  const p1 = d.rondaUno[0], p2 = d.rondaUno[1], p3 = d.rondaUno[2], p4 = d.rondaUno[3];
-  const perdedor = (p) => p.ganador === p.local ? p.visitante : p.local;
-
-  d.semifinalesBasquet = [
-    { local: p1.ganador, visitante: p2.ganador, golesLocal: null, golesVisitante: null, ganador: null, llave: 'Grupo 1' },
-    { local: p3.ganador, visitante: p4.ganador, golesLocal: null, golesVisitante: null, ganador: null, llave: 'Grupo 2' }
-  ];
-  d.perdedoresBasquet = [
-    { local: perdedor(p1), visitante: perdedor(p2), golesLocal: null, golesVisitante: null, ganador: null, llave: 'Grupo 1' },
-    { local: perdedor(p3), visitante: perdedor(p4), golesLocal: null, golesVisitante: null, ganador: null, llave: 'Grupo 2' }
-  ];
-  guardarEstado();
-  renderizarMarcadoresBasquet();
-  renderizarCalendarioBasquet();
-}
-
-function generarFinalBasquet(){
-  const d = disciplinas.basquet;
-  if(!d.semifinalesBasquet || d.semifinalesBasquet.some(p => !p.ganador)){
-    alert("Completa todos los marcadores de Semifinales primero."); return;
-  }
-  if(!d.perdedoresBasquet || d.perdedoresBasquet.some(p => !p.ganador)){
-    alert("Completa todos los marcadores de Llave de Perdedores primero."); return;
-  }
-
-  const sf1 = d.semifinalesBasquet[0], sf2 = d.semifinalesBasquet[1];
-  d.finalBasquet = { local: sf1.ganador, visitante: sf2.ganador, golesLocal: null, golesVisitante: null, ganador: null };
-
-  const perd = (p) => p.ganador === p.local ? p.visitante : p.local;
-  const dif = (p) => Math.abs(p.golesLocal - p.golesVisitante);
-  const gfPerd = (p) => p.ganador === p.local ? p.golesVisitante : p.golesLocal;
-  const gfGan = (p) => p.ganador === p.local ? p.golesLocal : p.golesVisitante;
-
-  const terceros = [
-    { equipo: perd(sf1), dif: dif(sf1), gf: gfPerd(sf1) },
-    { equipo: perd(sf2), dif: dif(sf2), gf: gfPerd(sf2) }
-  ];
-  terceros.sort((a,b) => b.dif - a.dif || b.gf - a.gf);
-  d.tercerPuestoBasquet = terceros[0].equipo;
-  d.cuartoPuestoBasquet = terceros[1].equipo;
-
-  const quintos = [
-    { equipo: d.perdedoresBasquet[0].ganador, dif: dif(d.perdedoresBasquet[0]), gf: gfGan(d.perdedoresBasquet[0]) },
-    { equipo: d.perdedoresBasquet[1].ganador, dif: dif(d.perdedoresBasquet[1]), gf: gfGan(d.perdedoresBasquet[1]) }
-  ];
-  quintos.sort((a,b) => b.dif - a.dif || b.gf - a.gf);
-  d.quintoPuestoBasquet = quintos[0].equipo;
-
-  guardarEstado();
-  renderizarEliminatoriaBasquet();
-  renderizarCalendarioBasquet();
-}
-
-function rehacerFinalBasquet(){
-  if(!confirm('¿Seguro que quieres borrar la Final y los puestos de Básquet?')) return;
-  const d = disciplinas.basquet;
-  d.finalBasquet = undefined;
-  d.tercerPuestoBasquet = undefined;
-  d.cuartoPuestoBasquet = undefined;
-  d.quintoPuestoBasquet = undefined;
-  guardarEstado();
-  renderizarEliminatoriaBasquet();
-  renderizarCalendarioBasquet();
-}
-
-function actualizarMarcadorBasquet(nombreArray, idx, campo, valorStr){
-  const d = disciplinas.basquet;
-  const valor = valorStr === '' ? null : Number(valorStr);
-  const partido = nombreArray === 'finalBasquet' ? d.finalBasquet : d[nombreArray][idx];
-  partido[campo] = valor;
-
-  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
-    if(partido.golesLocal === partido.golesVisitante){
-      alert('No puede haber empate en Básquet. Corrige el marcador.');
-      partido.golesLocal = null; partido.golesVisitante = null; partido.ganador = null;
-    } else {
-      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
-    }
-  } else { partido.ganador = null; }
-
-  guardarEstado();
-  if(nombreArray === 'finalBasquet') renderizarEliminatoriaBasquet();
-  else renderizarMarcadoresBasquet();
-  renderizarCalendarioBasquet();
-}
-
-function renderizarMarcadoresBasquet(){
-  const d = disciplinas.basquet;
-  const contRonda1 = document.getElementById('marcadores-ronda1-basquet');
-  const contFase2 = document.getElementById('marcadores-fase2-basquet');
-  const cardFase2 = document.getElementById('card-fase2-basquet');
-
-  if(!d.rondaUno){
-    contRonda1.innerHTML = '<p class="add-note">Falta generar Ronda 1 en Sorteo.</p>';
-    cardFase2.style.display = 'none'; 
-    renderizarTablasBasquet();
-    return;
-  }
-  cardFase2.style.display = '';
-
-  const armarTabla = (partidos, nombreArray) => {
-    let html = '<table><tr><th>Llave</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
-    partidos.forEach((p, idx) => {
-      const soloLectura = !esOrganizador();
-      html += `<tr><td>${p.llave}</td><td>${p.local}</td><td>
-        <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorBasquet('${nombreArray}', ${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
-        <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorBasquet('${nombreArray}', ${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
-        </td><td>${p.visitante}</td><td>${p.ganador || '—'}</td></tr>`;
-    });
-    return html + '</table>';
-  };
-
-  contRonda1.innerHTML = armarTabla(d.rondaUno, 'rondaUno');
-
-  if(d.semifinalesBasquet && d.perdedoresBasquet){
-    contFase2.innerHTML = '<b>Semifinales (Ganadores)</b><br>' + armarTabla(d.semifinalesBasquet, 'semifinalesBasquet') +
-                          '<br><b>Llave de Perdedores (5to lugar)</b><br>' + armarTabla(d.perdedoresBasquet, 'perdedoresBasquet');
-  } else {
-    contFase2.innerHTML = '<p class="add-note">Aún no se ha generado la fase 2.</p>';
-  }
-
-  renderizarTablasBasquet();
-}
-
 function renderizarEliminatoriaBasquet(){
   const d = disciplinas.basquet;
   const cont = document.getElementById('final-basquet-contenedor');
-  if(!d.semifinalesBasquet || !d.perdedoresBasquet){ cont.innerHTML = '<p class="add-note">Falta generar y completar resultados en la Tabla de Posiciones.</p>'; return; }
+  if(!cont) return;
+  if(!d.semifinalesBasquet || !d.perdedoresBasquet || d.semifinalesBasquet.some(p=>!p.ganador) || d.perdedoresBasquet.some(p=>!p.ganador)){
+    cont.innerHTML = '<p class="add-note">Falta generar y completar resultados en la Tabla de Posiciones.</p>'; return;
+  }
   if(!d.finalBasquet){ cont.innerHTML = '<div class="btn-row"><button class="btn oro" onclick="generarFinalBasquet()">🥇 Generar Final y Puestos</button></div>'; return; }
 
   const f = d.finalBasquet;
@@ -2088,6 +1508,254 @@ function renderizarEliminatoriaBasquet(){
   cont.innerHTML = html;
 }
 
+// ===== ECUAVOLEY — CUARTOS FIJOS + TABLA GANADORES/PERDEDORES =====
+
+function generarCuartosVoley(){
+  const d = disciplinas.voley;
+  d.cuartosVoley = ECUAVOLEY_QF_FIJOS.map(p => ({ local: p.local, visitante: p.visitante, golesLocal: null, golesVisitante: null, ganador: null, llave: p.llave }));
+  d.tablaGanadoresVoley = undefined;
+  d.tablaPerdedoresVoley = undefined;
+  d.semifinalesGanadoresVoley = undefined;
+  d.semifinalesPerdedoresVoley = undefined;
+  d.finalGanadoresVoley = undefined;
+  d.finalPerdedoresVoley = undefined;
+  d.tercerPuestoVoley = undefined;
+  d.cuartoPuestoVoley = undefined;
+  d.septimoPuestoVoley = undefined;
+  d.octavoPuestoVoley = undefined;
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function actualizarMarcadorCuartoVoley(idx, campo, valorStr){
+  const d = disciplinas.voley;
+  const p = d.cuartosVoley[idx];
+  p[campo] = valorStr === '' ? null : Number(valorStr);
+  if(typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number'){
+    if(p.golesLocal === p.golesVisitante){ alert('No puede haber empate.'); p.golesLocal = null; p.golesVisitante = null; p.ganador = null; }
+    else p.ganador = p.golesLocal > p.golesVisitante ? p.local : p.visitante;
+  } else p.ganador = null;
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function generarTablasVoley(){
+  const d = disciplinas.voley;
+  if(!d.cuartosVoley || d.cuartosVoley.some(p => !p.ganador)){ alert('Completa los 5 partidos de Cuartos primero.'); return; }
+  const dif = (p) => Math.abs(p.golesLocal - p.golesVisitante);
+  const gfGan = (p) => p.ganador === p.local ? p.golesLocal : p.golesVisitante;
+  const gfPerd = (p) => p.ganador === p.local ? p.golesVisitante : p.golesLocal;
+  const perd = (p) => p.ganador === p.local ? p.visitante : p.local;
+
+  d.tablaGanadoresVoley = d.cuartosVoley.map(p => ({ equipo: p.ganador, dif: dif(p), gf: gfGan(p), llave: p.llave }))
+    .sort((a,b) => b.dif - a.dif || b.gf - a.gf);
+  d.tablaPerdedoresVoley = d.cuartosVoley.map(p => ({ equipo: perd(p), dif: dif(p), gf: gfPerd(p), llave: p.llave }))
+    .sort((a,b) => b.dif - a.dif || b.gf - a.gf);
+
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function generarSemifinalesVoley(){
+  const d = disciplinas.voley;
+  if(!d.tablaGanadoresVoley || !d.tablaPerdedoresVoley){ alert('Genera las tablas primero.'); return; }
+  const tg = d.tablaGanadoresVoley, tp = d.tablaPerdedoresVoley;
+  d.semifinalesGanadoresVoley = [
+    { local: tg[0].equipo, visitante: tg[3].equipo, golesLocal: null, golesVisitante: null, ganador: null },
+    { local: tg[1].equipo, visitante: tg[2].equipo, golesLocal: null, golesVisitante: null, ganador: null }
+  ];
+  d.semifinalesPerdedoresVoley = [
+    { local: tp[0].equipo, visitante: tp[3].equipo, golesLocal: null, golesVisitante: null, ganador: null },
+    { local: tp[1].equipo, visitante: tp[2].equipo, golesLocal: null, golesVisitante: null, ganador: null }
+  ];
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function actualizarMarcadorSemiVoleyDirecta(grupo, idx, campo, valorStr){
+  const d = disciplinas.voley;
+  const arr = grupo === 'ganadores' ? d.semifinalesGanadoresVoley : d.semifinalesPerdedoresVoley;
+  const p = arr[idx];
+  p[campo] = valorStr === '' ? null : Number(valorStr);
+  if(typeof p.golesLocal === 'number' && typeof p.golesVisitante === 'number'){
+    if(p.golesLocal === p.golesVisitante){ alert('No puede haber empate.'); p.golesLocal = null; p.golesVisitante = null; p.ganador = null; }
+    else p.ganador = p.golesLocal > p.golesVisitante ? p.local : p.visitante;
+  } else p.ganador = null;
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function generarFinalesVoley(){
+  const d = disciplinas.voley;
+  if(!d.semifinalesGanadoresVoley || d.semifinalesGanadoresVoley.some(p=>!p.ganador)){ alert('Completa las Semifinales de la Llave Campeonato.'); return; }
+  if(!d.semifinalesPerdedoresVoley || d.semifinalesPerdedoresVoley.some(p=>!p.ganador)){ alert('Completa las Semifinales de la Llave 5to al 8vo.'); return; }
+
+  const dif = (p) => Math.abs(p.golesLocal - p.golesVisitante);
+  const perd = (p) => p.ganador === p.local ? p.visitante : p.local;
+  const gfPerd = (p) => p.ganador === p.local ? p.golesVisitante : p.golesLocal;
+
+  const sg1 = d.semifinalesGanadoresVoley[0], sg2 = d.semifinalesGanadoresVoley[1];
+  d.finalGanadoresVoley = { local: sg1.ganador, visitante: sg2.ganador, golesLocal: null, golesVisitante: null, ganador: null };
+  const terc = [{equipo: perd(sg1), dif: dif(sg1), gf: gfPerd(sg1)}, {equipo: perd(sg2), dif: dif(sg2), gf: gfPerd(sg2)}].sort((a,b)=>b.dif-a.dif||b.gf-a.gf);
+  d.tercerPuestoVoley = terc[0].equipo;
+  d.cuartoPuestoVoley = terc[1].equipo;
+
+  const sp1 = d.semifinalesPerdedoresVoley[0], sp2 = d.semifinalesPerdedoresVoley[1];
+  d.finalPerdedoresVoley = { local: sp1.ganador, visitante: sp2.ganador, golesLocal: null, golesVisitante: null, ganador: null };
+  const sept = [{equipo: perd(sp1), dif: dif(sp1), gf: gfPerd(sp1)}, {equipo: perd(sp2), dif: dif(sp2), gf: gfPerd(sp2)}].sort((a,b)=>b.dif-a.dif||b.gf-a.gf);
+  d.septimoPuestoVoley = sept[0].equipo;
+  d.octavoPuestoVoley = sept[1].equipo;
+
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function actualizarMarcadorFinalVoleyDirecta(grupo, campo, valorStr){
+  const d = disciplinas.voley;
+  const f = grupo === 'ganadores' ? d.finalGanadoresVoley : d.finalPerdedoresVoley;
+  f[campo] = valorStr === '' ? null : Number(valorStr);
+  if(typeof f.golesLocal === 'number' && typeof f.golesVisitante === 'number'){
+    if(f.golesLocal === f.golesVisitante){ alert('No puede haber empate.'); f.golesLocal = null; f.golesVisitante = null; f.ganador = null; }
+    else f.ganador = f.golesLocal > f.golesVisitante ? f.local : f.visitante;
+  } else f.ganador = null;
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function rehacerEliminacionVoley(){
+  if(!confirm('¿Rehacer toda la eliminación de Ecuavoley?')) return;
+  const d = disciplinas.voley;
+  d.cuartosVoley = undefined;
+  d.tablaGanadoresVoley = undefined;
+  d.tablaPerdedoresVoley = undefined;
+  d.semifinalesGanadoresVoley = undefined;
+  d.semifinalesPerdedoresVoley = undefined;
+  d.finalGanadoresVoley = undefined;
+  d.finalPerdedoresVoley = undefined;
+  d.tercerPuestoVoley = undefined;
+  d.cuartoPuestoVoley = undefined;
+  d.septimoPuestoVoley = undefined;
+  d.octavoPuestoVoley = undefined;
+  guardarEstado();
+  renderizarEliminacionVoley();
+}
+
+function renderizarEliminacionVoley(){
+  const cont = document.getElementById('eliminacion-directa-voley');
+  if(!cont) return;
+  const d = disciplinas.voley;
+  const soloLectura = !esOrganizador();
+  let html = '';
+
+  if(!soloLectura){
+    html += '<div class="btn-row" style="margin-bottom:10px;">';
+    if(!d.cuartosVoley) html += '<button class="btn oro" onclick="generarCuartosVoley()">🏐 Generar Cuartos (5 partidos fijos)</button>';
+    else html += '<button class="btn" onclick="rehacerEliminacionVoley()" style="background:var(--rojo-tab);">🔄 Rehacer todo</button>';
+    html += '</div>';
+  }
+
+  if(!d.cuartosVoley){ cont.innerHTML = html + '<p class="add-note">Aún no se han generado los Cuartos de Final.</p>'; return; }
+
+  html += '<b>Cuartos de Final</b><table><tr><th>Llave</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
+  d.cuartosVoley.forEach((p, idx) => {
+    html += `<tr><td>${p.llave}</td><td>${p.local}</td><td>
+      <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorCuartoVoley(${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorCuartoVoley(${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
+      </td><td>${p.visitante}</td><td>${p.ganador || '—'}</td></tr>`;
+  });
+  html += '</table>';
+
+  if(!d.tablaGanadoresVoley && !soloLectura){
+    html += '<div class="btn-row" style="margin-top:14px;"><button class="btn oro" onclick="generarTablasVoley()">📊 Generar Tablas de Ganadores/Perdedores</button></div>';
+  }
+
+  if(d.tablaGanadoresVoley && d.tablaPerdedoresVoley){
+    html += '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;">';
+    html += '<div style="flex:1;min-width:260px;"><b>Tabla de Ganadores</b><table><tr><th>Pos</th><th>Equipo</th><th>Dif</th><th>Pts</th></tr>';
+    d.tablaGanadoresVoley.forEach((e, pos) => {
+      html += `<tr ${pos<4?'class="top3"':''}><td>${pos+1}</td><td>${e.equipo}</td><td>+${e.dif}</td><td>${e.gf}</td></tr>`;
+    });
+    html += '</table><p class="add-note" style="font-size:11px;">Top 4 pasan a Semifinal. 5to queda eliminado.</p></div>';
+
+    html += '<div style="flex:1;min-width:260px;"><b>Tabla de Perdedores</b><table><tr><th>Pos</th><th>Equipo</th><th>Dif</th><th>Pts</th></tr>';
+    d.tablaPerdedoresVoley.forEach((e, pos) => {
+      html += `<tr ${pos<4?'class="top3"':''}><td>${pos+1}</td><td>${e.equipo}</td><td>+${e.dif}</td><td>${e.gf}</td></tr>`;
+    });
+    html += '</table><p class="add-note" style="font-size:11px;">Top 4 pasan a Semifinal. 5to queda eliminado.</p></div>';
+    html += '</div>';
+  }
+
+  if(d.tablaGanadoresVoley && !d.semifinalesGanadoresVoley && !soloLectura){
+    html += '<div class="btn-row" style="margin-top:14px;"><button class="btn oro" onclick="generarSemifinalesVoley()">🏆 Generar Semifinales (Ganadores y Perdedores)</button></div>';
+  }
+
+  const armarFilaSemi = (p, grupo, idx) => `<tr><td>${p.local}</td><td>
+      <input type="number" min="0" style="width:36px;" value="${p.golesLocal ?? ''}" onchange="actualizarMarcadorSemiVoleyDirecta('${grupo}', ${idx}, 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" min="0" style="width:36px;" value="${p.golesVisitante ?? ''}" onchange="actualizarMarcadorSemiVoleyDirecta('${grupo}', ${idx}, 'golesVisitante', this.value)" ${soloLectura?'disabled':''}>
+      </td><td>${p.visitante}</td><td>${p.ganador || '—'}</td></tr>`;
+
+  if(d.semifinalesGanadoresVoley){
+    html += '<b style="display:block;margin-top:14px;">Semifinal — Llave Campeonato (1ro-4to)</b><table><tr><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
+    d.semifinalesGanadoresVoley.forEach((p, idx) => { html += armarFilaSemi(p, 'ganadores', idx); });
+    html += '</table>';
+  }
+  if(d.semifinalesPerdedoresVoley){
+    html += '<b style="display:block;margin-top:14px;">Semifinal — Llave 5to al 8vo</b><table><tr><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
+    d.semifinalesPerdedoresVoley.forEach((p, idx) => { html += armarFilaSemi(p, 'perdedores', idx); });
+    html += '</table>';
+  }
+
+  if(d.semifinalesGanadoresVoley && d.semifinalesGanadoresVoley.every(p=>p.ganador) &&
+     d.semifinalesPerdedoresVoley && d.semifinalesPerdedoresVoley.every(p=>p.ganador) &&
+     !d.finalGanadoresVoley && !soloLectura){
+    html += '<div class="btn-row" style="margin-top:14px;"><button class="btn oro" onclick="generarFinalesVoley()">🥇 Generar Finales y Puestos</button></div>';
+  }
+
+  if(d.finalGanadoresVoley){
+    const f = d.finalGanadoresVoley;
+    html += '<b style="display:block;margin-top:14px;">Final Campeonato (1ro-4to)</b><table><tr><th>Puesto</th><th>Detalle</th></tr>';
+    html += `<tr><td>FINAL (1ro/2do)</td><td>${f.local}
+      <input type="number" style="width:36px;" value="${f.golesLocal ?? ''}" onchange="actualizarMarcadorFinalVoleyDirecta('ganadores', 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" style="width:36px;" value="${f.golesVisitante ?? ''}" onchange="actualizarMarcadorFinalVoleyDirecta('ganadores', 'golesVisitante', this.value)" ${soloLectura?'disabled':''}> ${f.visitante}${f.ganador?' 🏆 '+f.ganador:''}</td></tr>`;
+    html += `<tr><td>3er puesto</td><td>${d.tercerPuestoVoley || '—'}</td></tr>`;
+    html += `<tr><td>4to puesto</td><td>${d.cuartoPuestoVoley || '—'}</td></tr>`;
+    html += '</table>';
+  }
+  if(d.finalPerdedoresVoley){
+    const f = d.finalPerdedoresVoley;
+    html += '<b style="display:block;margin-top:14px;">Final 5to al 8vo puesto</b><table><tr><th>Puesto</th><th>Detalle</th></tr>';
+    html += `<tr><td>5to/6to</td><td>${f.local}
+      <input type="number" style="width:36px;" value="${f.golesLocal ?? ''}" onchange="actualizarMarcadorFinalVoleyDirecta('perdedores', 'golesLocal', this.value)" ${soloLectura?'disabled':''}> -
+      <input type="number" style="width:36px;" value="${f.golesVisitante ?? ''}" onchange="actualizarMarcadorFinalVoleyDirecta('perdedores', 'golesVisitante', this.value)" ${soloLectura?'disabled':''}> ${f.visitante}${f.ganador?' 🥉 '+f.ganador:''}</td></tr>`;
+    html += `<tr><td>7mo puesto</td><td>${d.septimoPuestoVoley || '—'}</td></tr>`;
+    html += `<tr><td>8vo puesto</td><td>${d.octavoPuestoVoley || '—'}</td></tr>`;
+    html += '</table>';
+  }
+
+  cont.innerHTML = html;
+}
+
+function rehacerSorteo(){
+  const d = disciplinas[disciplinaActual];
+  if(!confirm('¿Seguro que quieres rehacer el sorteo de "' + d.titulo + '"?\nTodos los equipos volverán a la lista de pendientes.')) return;
+  d.grupos = [];
+  for(let i=0; i<d.numGrupos; i++) d.grupos.push([]);
+  guardarEstado();
+  seleccionarDisciplina(disciplinaActual, false);
+}
+
+function agregarEquipo(){
+  const input = document.getElementById('nuevo-equipo');
+  const nombre = input.value.trim();
+  if(!nombre) return;
+  const d = disciplinas[disciplinaActual];
+  if(d.equipos.includes(nombre)){ alert('Ya existe un equipo con ese nombre.'); return; }
+  d.equipos.push(nombre);
+  guardarEstado();
+  seleccionarDisciplina(disciplinaActual, false);
+  input.value = '';
+}
+
 function ir(i, btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('s'+i).classList.add('active');
@@ -2096,38 +1764,18 @@ function ir(i, btn){
 
   if(i === 2){
     renderizarGrupos();
-    if(disciplinaActual !== 'basquet' && disciplinaActual !== 'voley') renderizarCalendarioFutbol();
   }
   if(i === 3){
-    if(disciplinaActual === 'basquet') {
-      document.getElementById('contenedor-tabla-futbol').style.display = 'none';
-      document.getElementById('contenedor-marcadores-basquet').style.display = '';
-      renderizarMarcadoresBasquet();
-    } else {
-      document.getElementById('contenedor-tabla-futbol').style.display = '';
-      document.getElementById('contenedor-marcadores-basquet').style.display = 'none';
-      
-      const card3ra = document.getElementById('card-tercera-ronda-grupoA');
-      if(card3ra) {
-        card3ra.style.display = (disciplinaActual === 'hombres' && disciplinas[disciplinaActual].grupos && disciplinas[disciplinaActual].grupos[0] && disciplinas[disciplinaActual].grupos[0].length===3) ? '' : 'none';
-      }
-      grupoTablaActual = 0; renderizarTabla();
-    }
+    const esFijo = (disciplinaActual === 'hombres' || disciplinaActual === 'basquet' || disciplinaActual === 'voley');
+    document.getElementById('contenedor-tabla-futbol').style.display = esFijo ? 'none' : '';
+    document.getElementById('s3-fijo-msg').style.display = esFijo ? '' : 'none';
+    if(!esFijo){ grupoTablaActual = 0; renderizarTabla(); }
   }
   if(i === 4){
-    if(disciplinaActual === 'basquet') {
-      document.getElementById('contenedor-eliminacion-futbol').style.display = 'none';
-      document.getElementById('contenedor-eliminacion-basquet').style.display = '';
-      document.getElementById('s4-voley-msg').style.display = 'none';
-      renderizarEliminatoriaBasquet();
-    } else if(disciplinaActual === 'voley') {
-      document.getElementById('contenedor-eliminacion-futbol').style.display = 'none';
-      document.getElementById('contenedor-eliminacion-basquet').style.display = 'none';
-      document.getElementById('s4-voley-msg').style.display = '';
-    } else {
-      document.getElementById('contenedor-eliminacion-futbol').style.display = '';
-      document.getElementById('contenedor-eliminacion-basquet').style.display = 'none';
-      document.getElementById('s4-voley-msg').style.display = 'none';
+    const esFijo = (disciplinaActual === 'hombres' || disciplinaActual === 'basquet' || disciplinaActual === 'voley');
+    document.getElementById('contenedor-eliminacion-futbol').style.display = esFijo ? 'none' : '';
+    document.getElementById('s4-fijo-msg').style.display = esFijo ? '' : 'none';
+    if(!esFijo){
       if(!disciplinas[disciplinaActual].bracket) generarBracket(2);
       renderizarBracket();
     }
@@ -2333,26 +1981,69 @@ function renderizarBracketJenga(){
   });
 }
 
+function eliminarEquipo(nombre){
+  if(!confirm('¿Eliminar el equipo "' + nombre + '"?')) return;
+  const d = disciplinas[disciplinaActual];
+  const idx = d.equipos.indexOf(nombre);
+  if(idx !== -1) d.equipos.splice(idx, 1);
+  if(d.grupos){
+    d.grupos.forEach(g => {
+      const i = g.indexOf(nombre);
+      if(i !== -1) g.splice(i, 1);
+    });
+  }
+  guardarEstado();
+  seleccionarDisciplina(disciplinaActual, false);
+}
+
+function editarEquipo(nombreAnterior){
+  const d = disciplinas[disciplinaActual];
+  const nuevoNombre = prompt('Nuevo nombre del equipo:', nombreAnterior);
+  if(!nuevoNombre || !nuevoNombre.trim() || nuevoNombre.trim() === nombreAnterior) return;
+  const nuevo = nuevoNombre.trim();
+  if(d.equipos.includes(nuevo)){ alert('Ya existe un equipo con ese nombre.'); return; }
+  const idx = d.equipos.indexOf(nombreAnterior);
+  if(idx !== -1) d.equipos[idx] = nuevo;
+  if(d.grupos) d.grupos.forEach(g => {
+    const i = g.indexOf(nombreAnterior);
+    if(i !== -1) g[i] = nuevo;
+  });
+  if(d.partidos) d.partidos.forEach(grupoParts => {
+    grupoParts.forEach(p => {
+      if(p.local === nombreAnterior) p.local = nuevo;
+      if(p.visitante === nombreAnterior) p.visitante = nuevo;
+    });
+  });
+  guardarEstado();
+  seleccionarDisciplina(disciplinaActual, false);
+}
+
 // Global functions for events
-window.cambiarTipoEquipoBasquet = cambiarTipoEquipoBasquet;
-window.eliminarEquipoBasquet = eliminarEquipoBasquet;
-window.agregarJugadorMixto = agregarJugadorMixto;
-window.eliminarJugadorMixto = eliminarJugadorMixto;
 window.actualizarMarcadorBasquet = actualizarMarcadorBasquet;
-window.generarCalendarioBasquet = renderizarCalendarioBasquet;
 window.generarFaseDosBasquet = generarFaseDosBasquet;
 window.generarFinalBasquet = generarFinalBasquet;
 window.rehacerFinalBasquet = rehacerFinalBasquet;
-window.generarCalendarioVoley = generarCalendarioVoley;
-window.registrarTiempoVoley = registrarTiempoVoley;
-window.generarSemifinalVoley = generarSemifinalVoley;
-window.actualizarMarcadorSemiVoley = actualizarMarcadorSemiVoley;
-window.generarFinalVoley = generarFinalVoley;
-window.actualizarMarcadorFinalVoley = actualizarMarcadorFinalVoley;
+window.generarRondaUnoBasquet = generarRondaUnoBasquet;
 window.cambiarTabMundial = cambiarTabMundial;
 window.actualizarMazosJenga = actualizarMazosJenga;
 window.inscribirJenga = inscribirJenga;
 window.generarBracketJenga = generarBracketJenga;
 window.rehacerSorteoJenga = rehacerSorteoJenga;
-
+window.eliminarEquipo = eliminarEquipo;
+window.editarEquipo = editarEquipo;
+window.actualizarMarcadorFutbolFijo = actualizarMarcadorFutbolFijo;
+window.generarSemifinalFutbolFija = generarSemifinalFutbolFija;
+window.actualizarMarcadorSemifinalFutbolFija = actualizarMarcadorSemifinalFutbolFija;
+window.generarFinalFutbolFija = generarFinalFutbolFija;
+window.actualizarMarcadorFinalFutbolFija = actualizarMarcadorFinalFutbolFija;
+window.rehacerFutbolFijo = rehacerFutbolFijo;
+window.generarCuartosVoley = generarCuartosVoley;
+window.actualizarMarcadorCuartoVoley = actualizarMarcadorCuartoVoley;
+window.generarTablasVoley = generarTablasVoley;
+window.generarSemifinalesVoley = generarSemifinalesVoley;
+window.actualizarMarcadorSemiVoleyDirecta = actualizarMarcadorSemiVoleyDirecta;
+window.generarFinalesVoley = generarFinalesVoley;
+window.actualizarMarcadorFinalVoleyDirecta = actualizarMarcadorFinalVoleyDirecta;
+window.rehacerEliminacionVoley = rehacerEliminacionVoley;
+window.rehacerCuartosBasquet = rehacerCuartosBasquet;
 iniciarApp();
