@@ -22,6 +22,7 @@
     <button onclick="ir(3,this)">4. TABLA POSICIONES</button>
     <button onclick="ir(4,this)">5. ELIMINACIÓN DIRECTA</button>
     <button onclick="ir(5,this)">6. MUNDIAL DE 40</button>
+    <button onclick="ir(6,this)">7. INSTITUCIONES</button>
   </nav>
   <button id="btn-modo-organizador" onclick="intentarModoOrganizador()" style="margin-left:10px;font-size:12px;padding:4px 10px;cursor:pointer;">🔑 Modo organizador</button>
 
@@ -203,6 +204,26 @@
 
     <div class="btn-row">
       <button class="btn" onclick="irAtras(5)">← Atrás</button>
+    </div>
+  </section>
+
+  <!-- 6. INSTITUCIONES -->
+  <section class="screen" id="s6">
+    <h1>Instituciones y disciplinas</h1>
+    <p class="add-note">Marca en qué disciplinas participa cada institución. Esto ayuda a detectar cruces de horario entre disciplinas.</p>
+    <div class="card" id="card-agregar-institucion">
+      <label style="font-size:13px;">Nombre de la institución</label><br>
+      <div class="btn-row">
+        <input type="text" id="nueva-institucion" placeholder="Ej: Estación Radar de la DGAC" style="flex:1;padding:8px;border:1px solid var(--linea);">
+        <button class="btn" onclick="agregarInstitucion()">Agregar institución</button>
+      </div>
+    </div>
+    <div class="card">
+      <b>Instituciones registradas</b>
+      <div id="lista-instituciones" style="margin-top:10px;"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="irAtras(6)">← Atrás</button>
     </div>
   </section>
 </main>

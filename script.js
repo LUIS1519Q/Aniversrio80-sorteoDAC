@@ -27,6 +27,98 @@ let mundial40 = {
   bracket: null
 };
 
+// --- Instituciones y en qué disciplinas participan ---
+let instituciones = {};
+// Estructura: { "Nombre Institucion": { futbolMasculino:true, futbolFemenino:false, basquet:true, ecuavoley:true, mundial40:false, jenga:false } }
+
+const disciplinasParaCheckbox = [
+  { clave: 'futbolMasculino', etiqueta: 'Fútbol Masculino' },
+  { clave: 'futbolFemenino', etiqueta: 'Fútbol Femenino' },
+  { clave: 'basquet', etiqueta: 'Básquet' },
+  { clave: 'ecuavoley', etiqueta: 'Ecuavoley' },
+  { clave: 'mundial40', etiqueta: 'Mundial de 40' },
+  { clave: 'jenga', etiqueta: 'Jenga' }
+];
+
+function agregarInstitucion(){
+  const input = document.getElementById('nueva-institucion');
+  const nombre = input.value.trim();
+  if(!nombre) return;
+
+  if(instituciones[nombre]){
+    alert('Ya existe una institución con ese nombre.');
+    return;
+  }
+
+  const participacion = {};
+  disciplinasParaCheckbox.forEach(d => { participacion[d.clave] = false; });
+  instituciones[nombre] = participacion;
+
+  guardarEstado();
+  renderizarInstituciones();
+  input.value = '';
+}
+
+function cambiarParticipacion(nombreInstitucion, claveDisciplina, activo){
+  if(!esOrganizador()) return;
+  if(!instituciones[nombreInstitucion]) return;
+  instituciones[nombreInstitucion][claveDisciplina] = activo;
+  guardarEstado();
+}
+
+function eliminarInstitucion(nombre){
+  if(!confirm('¿Eliminar la institución "' + nombre + '"? Esto no borra sus resultados ya jugados en ninguna disciplina, solo la quita de esta lista.')) return;
+  delete instituciones[nombre];
+  guardarEstado();
+  renderizarInstituciones();
+}
+
+function renderizarInstituciones(){
+  const cont = document.getElementById('lista-instituciones');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  const nombres = Object.keys(instituciones);
+  if(nombres.length === 0){
+    cont.innerHTML = '<p class="add-note">Aún no hay instituciones registradas.</p>';
+    return;
+  }
+
+  nombres.forEach(nombre => {
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 0;border-bottom:1px dashed var(--linea);';
+
+    const spanNombre = document.createElement('span');
+    spanNombre.textContent = nombre;
+    spanNombre.style.cssText = 'font-weight:bold;min-width:220px;';
+    fila.appendChild(spanNombre);
+
+    disciplinasParaCheckbox.forEach(d => {
+      const label = document.createElement('label');
+      label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:12px;color:var(--hueso);';
+
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.checked = !!instituciones[nombre][d.clave];
+      check.disabled = !esOrganizador();
+      check.onchange = () => cambiarParticipacion(nombre, d.clave, check.checked);
+
+      label.appendChild(check);
+      label.appendChild(document.createTextNode(d.etiqueta));
+      fila.appendChild(label);
+    });
+
+    if(esOrganizador()){
+      const btnEliminar = document.createElement('button');
+      btnEliminar.textContent = '🗑️';
+      btnEliminar.onclick = () => eliminarInstitucion(nombre);
+      fila.appendChild(btnEliminar);
+    }
+
+    cont.appendChild(fila);
+  });
+}
+
 function nombrePareja(pareja){
   return pareja.jugador1 + ' / ' + pareja.jugador2;
 }
@@ -268,42 +360,16 @@ function deshacerGanadorMundial(numRonda, numPartido){
   renderizarBracketMundial();
 }
 
-function propagarDesde(numRonda){
-  const d = disciplinas[disciplinaActual];
-  for(let r = numRonda + 1; r < d.bracket.length; r++){
-    const anterior = d.bracket[r - 1];
-    const actual = d.bracket[r];
+function propagarDesdeMundial(numRonda){
+  for(let r = numRonda + 1; r < mundial40.bracket.length; r++){
+    const anterior = mundial40.bracket[r - 1];
+    const actual = mundial40.bracket[r];
     for(let i = 0; i < actual.length; i++){
       actual[i].local = anterior[i * 2].ganador || 'Por definir';
       actual[i].visitante = anterior[i * 2 + 1].ganador || 'Por definir';
       actual[i].ganador = null;
-      actual[i].golesLocal = null;
-      actual[i].golesVisitante = null;
     }
   }
-}
-
-function actualizarMarcadorEliminacion(numRonda, numPartido, campo, valor){
-  const d = disciplinas[disciplinaActual];
-  const partido = d.bracket[numRonda][numPartido];
-  partido[campo] = valor;
-
-  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
-    if(partido.golesLocal === partido.golesVisitante){
-      alert('No puede haber empate en eliminación directa. Corrige el marcador.');
-      partido.golesLocal = null;
-      partido.golesVisitante = null;
-      partido.ganador = null;
-    } else {
-      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
-    }
-  } else {
-    partido.ganador = null;
-  }
-
-  propagarDesde(numRonda);
-  guardarEstado();
-  renderizarBracket();
 }
 
 const nombresRondaMundial = {
@@ -408,7 +474,7 @@ function limpiarUndefined(valor){
 const STORAGE_KEY = 'dgac_estado_disciplinas';
 
 function guardarEstado(){
-  const paqueteOriginal = { disciplinas: disciplinas, mundial40: mundial40 };
+  const paqueteOriginal = { disciplinas: disciplinas, mundial40: mundial40, instituciones: instituciones };
   const paquete = limpiarUndefined(paqueteOriginal);
   window.firebaseSet(window.firebaseRef(window.firebaseDB, 'estado'), paquete)
     .then(() => {
@@ -473,6 +539,10 @@ async function cargarEstado(){
 
     if(datosGuardados.mundial40){
       mundial40 = datosGuardados.mundial40;
+    }
+
+    if(datosGuardados.instituciones){
+      instituciones = datosGuardados.instituciones;
     }
 
     return true;
@@ -986,29 +1056,30 @@ function propagarDesde(numRonda){
       actual[i].local = anterior[i * 2].ganador || 'Por definir';
       actual[i].visitante = anterior[i * 2 + 1].ganador || 'Por definir';
       actual[i].ganador = null;
+      actual[i].golesLocal = null;
+      actual[i].golesVisitante = null;
     }
   }
 }
 
-function seleccionarGanador(numRonda, numPartido, equipoGanador){
-  const d = disciplinas[disciplinaActual];
-  d.bracket[numRonda][numPartido].ganador = equipoGanador;
-  propagarDesde(numRonda);
-  guardarEstado();
-  renderizarBracket();
-}
-
-function deshacerGanador(numRonda, numPartido){
+function actualizarMarcadorEliminacion(numRonda, numPartido, campo, valor){
   const d = disciplinas[disciplinaActual];
   const partido = d.bracket[numRonda][numPartido];
+  partido[campo] = valor;
 
-  const confirmar = confirm(
-    '¿Deshacer el resultado de "' + partido.local + ' vs ' + partido.visitante + '"?\n' +
-    'Esto también borrará los avances que dependían de este partido en las rondas siguientes.'
-  );
-  if(!confirmar) return;
+  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
+    if(partido.golesLocal === partido.golesVisitante){
+      alert('No puede haber empate en eliminación directa. Corrige el marcador.');
+      partido.golesLocal = null;
+      partido.golesVisitante = null;
+      partido.ganador = null;
+    } else {
+      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
+    }
+  } else {
+    partido.ganador = null;
+  }
 
-  partido.ganador = null;
   propagarDesde(numRonda);
   guardarEstado();
   renderizarBracket();
@@ -1247,6 +1318,9 @@ function ir(i, btn){
     renderizarListaParejas();
     if(mundial40.bracket) renderizarBracketMundial();
   }
+  if(i === 6){
+    renderizarInstituciones();
+  }
 }
 
 const pantallaAnterior = {
@@ -1254,7 +1328,8 @@ const pantallaAnterior = {
   2: 1,
   3: 2,
   4: 3,
-  5: 0
+  5: 0,
+  6: 0
 };
 
 function irAtras(actual){
