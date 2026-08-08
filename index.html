@@ -50,7 +50,7 @@
       <div class="disc-card" onclick="seleccionarDisciplina('voley')">
         <span class="disc-icono">🏐</span>
         <b>Ecuavoley</b>
-        <span>8 equipos · 3 grupos</span>
+        <span>8 equipos · 2 grupos</span>
       </div>
       <div class="disc-card" onclick="ir(5)">
         <span class="disc-icono">🃏</span>
@@ -175,6 +175,38 @@
       </div>
     </div>
 
+    <!-- CONTENEDOR VOLEY -->
+    <div id="contenedor-grupos-voley" style="display:none;">
+      <h1>Grupos generados — Ecuavoley</h1>
+      <p class="add-note">2 grupos de 4 equipos (todos contra todos dentro del grupo).</p>
+      <div class="grupos" id="voley-grupos-container"></div>
+
+      <div class="card">
+        <b>Calendario distribuido — Ecuavoley (3 canchas)</b>
+        <p class="add-note" style="font-size:11px;">Mide los tiempos reales de duración del partido utilizando los botones "Iniciar" y "Terminar".</p>
+        <div class="btn-row" id="boton-generar-calendario-voley">
+          <button class="btn oro" onclick="generarCalendarioVoley()">📅 Generar calendario distribuido (3 canchas)</button>
+        </div>
+        <div id="calendario-voley" style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;"></div>
+      </div>
+
+      <div class="card" id="card-semifinal-voley">
+        <b>Semifinal cruzada (1°A vs 2°B, 1°B vs 2°A) — Ecuavoley</b>
+        <div class="btn-row" id="boton-generar-semifinal-voley">
+          <button class="btn oro" onclick="generarSemifinalVoley()">🏆 Generar Semifinal</button>
+        </div>
+        <div id="semifinal-voley" style="margin-top:10px;overflow-x:auto;"></div>
+      </div>
+
+      <div class="card" id="card-final-voley">
+        <b>Final — Ecuavoley</b>
+        <div class="btn-row" id="boton-generar-final-voley">
+          <button class="btn oro" onclick="generarFinalVoley()">🥇 Generar Final y puestos</button>
+        </div>
+        <div id="final-puestos-voley" style="margin-top:10px;overflow-x:auto;"></div>
+      </div>
+    </div>
+
     <div class="btn-row">
       <button class="btn" onclick="irAtras(2)">← Atrás</button>
       <button class="btn oro" onclick="if(disciplinaActual !== 'basquet') generarPartidos(); ir(3)">Ver partidos y tabla →</button>
@@ -184,7 +216,7 @@
   <!-- 3. TABLA -->
   <section class="screen" id="s3">
     <div id="contenedor-tabla-futbol">
-      <h1>Partidos y tabla de posiciones — Grupo 1</h1>
+      <h1 id="titulo-tabla-normal">Partidos y tabla de posiciones — Grupo 1</h1>
       <div class="btn-row" id="selector-grupo-tabla" style="margin-bottom:14px;"></div>
 
       <div class="card">
@@ -249,6 +281,12 @@
       <h1>Eliminación directa (Final) — Básquet Mixto</h1>
       <p class="add-note">Calcula la Final y los puestos 3, 4 y 5 basándose en las tablas comparativas de la pantalla anterior.</p>
       <div class="card" id="final-basquet-contenedor"></div>
+    </div>
+
+    <div id="s4-voley-msg" style="display:none; text-align:center; padding:40px;">
+      <h1>Fase final — Ecuavoley</h1>
+      <p class="add-note">Para Ecuavoley, la generación de Semifinales y Final se encuentra en la pestaña <b>"3. Grupos"</b> para mayor comodidad.</p>
+      <button class="btn oro" onclick="ir(2)">Ir a Grupos de Ecuavoley</button>
     </div>
 
     <div class="btn-row">
