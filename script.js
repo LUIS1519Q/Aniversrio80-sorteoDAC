@@ -593,7 +593,8 @@ function aplicarModoLectura(){
     'boton-generar-bracket-mundial',
     'boton-regenerar-bracket',
     'card-num-grupos',
-    'boton-generar-calendario-futbol'
+    'boton-generar-calendario-futbol',
+    'boton-generar-semifinal'
   ];
   idsAOcultar.forEach(id => {
     const el = document.getElementById(id);
@@ -1001,6 +1002,136 @@ function actualizarMarcadorCruce(numPartido, campo, valor){
   renderizarCalendarioFutbol();
 }
 
+function calcularTablaExtendidaChico(){
+  const dH = disciplinas.hombres;
+  const idxChico = dH.grupos.findIndex(g => g.length === 3);
+  const tablaBase = calcularTabla(dH.grupos[idxChico], dH.partidos[idxChico]);
+  const stats = {};
+  tablaBase.forEach(e => { stats[e.equipo] = Object.assign({}, e); });
+
+  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  if(ultimaRonda && ultimaRonda.partidos){
+    ultimaRonda.partidos.forEach(p => {
+      if(typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number') return;
+      if(!stats[p.local]) return;
+      const e = stats[p.local];
+      e.pj++; e.gf += p.golesLocal; e.gc += p.golesVisitante;
+      if(p.golesLocal > p.golesVisitante){ e.pg++; e.pts += 3; }
+      else if(p.golesLocal < p.golesVisitante){ e.pp++; }
+      else { e.pe++; e.pts += 1; }
+      e.dif = e.gf - e.gc;
+    });
+  }
+  return Object.values(stats).sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+}
+
+function calcularTablaExtendidaGrande(){
+  const dH = disciplinas.hombres;
+  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
+  const tablaBase = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
+  const stats = {};
+  tablaBase.forEach(e => { stats[e.equipo] = Object.assign({}, e); });
+
+  const ultimaRonda = dH.calendarioSabado && dH.calendarioSabado[dH.calendarioSabado.length - 1];
+  if(ultimaRonda && ultimaRonda.partidos){
+    ultimaRonda.partidos.forEach(p => {
+      if(typeof p.golesLocal !== 'number' || typeof p.golesVisitante !== 'number') return;
+      if(!stats[p.visitante]) return;
+      const e = stats[p.visitante];
+      e.pj++; e.gf += p.golesVisitante; e.gc += p.golesLocal;
+      if(p.golesVisitante > p.golesLocal){ e.pg++; e.pts += 3; }
+      else if(p.golesVisitante < p.golesLocal){ e.pp++; }
+      else { e.pe++; e.pts += 1; }
+      e.dif = e.gf - e.gc;
+    });
+  }
+  return Object.values(stats).sort((a,b) => b.pts - a.pts || b.dif - a.dif || b.gf - a.gf);
+}
+
+function generarSemifinalFutbol(){
+  const dH = disciplinas.hombres;
+  if(!dH.calendarioSabado){
+    alert('Primero genera el calendario y los cruces.');
+    return;
+  }
+
+  const tablaChicoExt = calcularTablaExtendidaChico();
+  if(tablaChicoExt.some(e => e.pj < 3)){
+    alert('Todavía faltan resultados de los cruces. Completa esos 2 partidos antes de generar la Semifinal.');
+    return;
+  }
+
+  const idxGrande = dH.grupos.findIndex(g => g.length === 4);
+  const tablaGrande = calcularTabla(dH.grupos[idxGrande], dH.partidos[idxGrande]);
+
+  const primeroChico = tablaChicoExt[0].equipo;
+  const segundoChico = tablaChicoExt[1].equipo;
+  const primeroGrande = tablaGrande[0].equipo;
+  const segundoGrande = tablaGrande[1].equipo;
+
+  dH.semifinal = [
+    { local: primeroChico, visitante: segundoGrande, golesLocal: null, golesVisitante: null, ganador: null },
+    { local: primeroGrande, visitante: segundoChico, golesLocal: null, golesVisitante: null, ganador: null }
+  ];
+
+  guardarEstado();
+  renderizarSemifinalFutbol();
+}
+
+function actualizarMarcadorSemifinal(numPartido, campo, valor){
+  const dH = disciplinas.hombres;
+  const partido = dH.semifinal[numPartido];
+  partido[campo] = valor;
+
+  if(typeof partido.golesLocal === 'number' && typeof partido.golesVisitante === 'number'){
+    if(partido.golesLocal === partido.golesVisitante){
+      alert('No puede haber empate en Semifinal. Corrige el marcador.');
+      partido.golesLocal = null;
+      partido.golesVisitante = null;
+      partido.ganador = null;
+    } else {
+      partido.ganador = partido.golesLocal > partido.golesVisitante ? partido.local : partido.visitante;
+    }
+  } else {
+    partido.ganador = null;
+  }
+
+  guardarEstado();
+  renderizarSemifinalFutbol();
+}
+
+function renderizarSemifinalFutbol(){
+  const cont = document.getElementById('semifinal-futbol');
+  if(!cont) return;
+  cont.innerHTML = '';
+
+  const dH = disciplinas.hombres;
+  if(!dH.semifinal){
+    cont.innerHTML = '<p class="add-note">Aún no se ha generado la Semifinal. Completa los cruces y da clic en "Generar Semifinal".</p>';
+    return;
+  }
+
+  const soloLectura = !esOrganizador();
+  let html = '<table><tr><th>Semifinal</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Ganador</th></tr>';
+  dH.semifinal.forEach((p, idx) => {
+    html += '<tr><td>SF' + (idx + 1) + '</td><td>' + p.local + '</td>' +
+      '<td><input type="number" min="0" class="input-semi" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesLocal" value="' + (p.golesLocal ?? '') + '"' + (soloLectura ? ' disabled' : '') + '> - ' +
+      '<input type="number" min="0" class="input-semi" style="width:36px;" data-numpartido="' + idx + '" data-campo="golesVisitante" value="' + (p.golesVisitante ?? '') + '"' + (soloLectura ? ' disabled' : '') + '></td>' +
+      '<td>' + p.visitante + '</td><td>' + (p.ganador || '—') + '</td></tr>';
+  });
+  html += '</table>';
+  cont.innerHTML = html;
+
+  cont.querySelectorAll('.input-semi').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const numPartido = Number(e.target.dataset.numpartido);
+      const campo = e.target.dataset.campo;
+      const valor = e.target.value === '' ? null : Number(e.target.value);
+      actualizarMarcadorSemifinal(numPartido, campo, valor);
+    });
+  });
+}
+
 function renderizarGrupos(){
   const d = disciplinas[disciplinaActual];
   document.querySelector('#s2 h1').textContent = 'Grupos generados — ' + d.titulo;
@@ -1009,6 +1140,12 @@ function renderizarGrupos(){
   if(cardCalendario){
     const esFutbol = (disciplinaActual === 'hombres' || disciplinaActual === 'mujeres');
     cardCalendario.style.display = esFutbol ? '' : 'none';
+  }
+
+  const cardSemifinal = document.getElementById('card-semifinal-futbol');
+  if(cardSemifinal){
+    cardSemifinal.style.display = (disciplinaActual === 'hombres') ? '' : 'none';
+    if(disciplinaActual === 'hombres') renderizarSemifinalFutbol();
   }
 
   const cont = document.querySelector('#s2 .grupos');

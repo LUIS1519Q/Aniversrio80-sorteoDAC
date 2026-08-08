@@ -139,8 +139,17 @@
       <b>Calendario del sábado — Fútbol Masculino + Femenino (4 canchas)</b>
       <div class="btn-row" id="boton-generar-calendario-futbol">
         <button class="btn oro" onclick="generarCalendarioFutbolSabado()">📅 Generar calendario del sábado</button>
+        <button class="btn" onclick="generarCrucesFutbol()" style="background:var(--azul-cielo);">🔀 Generar cruces (con tabla ya jugada)</button>
       </div>
       <div id="calendario-futbol-sabado" style="margin-top:10px;overflow-x:auto;"></div>
+    </div>
+
+    <div class="card" id="card-semifinal-futbol">
+      <b>Semifinal — Fútbol Masculino (domingo)</b>
+      <div class="btn-row" id="boton-generar-semifinal">
+        <button class="btn oro" onclick="generarSemifinalFutbol()">🏆 Generar Semifinal</button>
+      </div>
+      <div id="semifinal-futbol" style="margin-top:10px;overflow-x:auto;"></div>
     </div>
 
     <div class="btn-row"><button class="btn" onclick="irAtras(2)">← Atrás</button><button class="btn oro" onclick="generarPartidos(); ir(3)">Ver partidos y tabla →</button></div>
